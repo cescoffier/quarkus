@@ -63,10 +63,11 @@ public class BookResource {
     @GET
     @Path("/{author}")
     public List<Book> getBooksByAuthor(@PathParam("author") String author) {
-        FindIterable<Book> iterable = collection.find(eq("author", author), Book.class);
+        FindIterable<Document> iterable = collection.find(eq("author", author));
         List<Book> books = new ArrayList<>();
-        for (Book b : iterable) {
-            books.add(b);
+        for (Document doc : iterable) {
+            String title = doc.getString("title");
+            books.add(new Book().setTitle(title).setAuthor(author));
         }
         return books;
     }
