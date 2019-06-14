@@ -26,6 +26,9 @@ import io.quarkus.runtime.annotations.Template;
 public class MongoClientTemplate {
 
     private static volatile MongoClient client;
+    // Use for the Vert.x client.
+    // TODO How to inject it into the Vert.x client?
+    private static volatile com.mongodb.async.client.MongoClient asyncClient;
 
     public RuntimeValue<MongoClient> configureTheClient(MongoClientConfig config,
             BeanContainer container,
@@ -34,7 +37,7 @@ public class MongoClientTemplate {
         initialize(config, codecProviders);
 
         MongoClientProducer producer = container.instance(MongoClientProducer.class);
-        producer.initialize(client, null);
+        producer.initialize(client, asyncClient, null);
 
         if (!launchMode.isDevOrTest()) {
             shutdown.addShutdownTask(this::close);
@@ -57,6 +60,7 @@ public class MongoClientTemplate {
         CodecRegistry defaultCodecRegistry = com.mongodb.MongoClient.getDefaultCodecRegistry();
 
         MongoClientSettings.Builder settings = MongoClientSettings.builder();
+
         ConnectionString connectionString = new ConnectionString(config.connectionString);
         settings.applyConnectionString(connectionString);
 
@@ -139,6 +143,7 @@ public class MongoClientTemplate {
 
         //TODO Configure the Vert.x client
         client = MongoClients.create(settings.build());
+        asyncClient = com.mongodb.async.client.MongoClients.create(settings.build());
     }
 
     List<? extends Codec<?>> getCodecs(List<String> classNames) {
