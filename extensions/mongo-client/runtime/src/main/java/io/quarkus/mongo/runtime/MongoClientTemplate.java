@@ -3,11 +3,12 @@ package io.quarkus.mongo.runtime;
 import static com.mongodb.AuthenticationMechanism.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-import org.bson.codecs.Codec;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
@@ -15,8 +16,11 @@ import org.bson.codecs.configuration.CodecRegistry;
 import com.mongodb.*;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.connection.ClusterConnectionMode;
 
 import io.quarkus.arc.runtime.BeanContainer;
+import io.quarkus.mongo.ReactiveMongoClient;
+import io.quarkus.mongo.impl.ReactiveMongoClientImpl;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
@@ -26,18 +30,17 @@ import io.quarkus.runtime.annotations.Template;
 public class MongoClientTemplate {
 
     private static volatile MongoClient client;
-    // Use for the Vert.x client.
-    // TODO How to inject it into the Vert.x client?
-    private static volatile com.mongodb.async.client.MongoClient asyncClient;
+    private static volatile ReactiveMongoClient reactiveMongoClient;
 
-    public RuntimeValue<MongoClient> configureTheClient(MongoClientConfig config,
+    public RuntimeValue<MongoClient> configureTheClient(
+            MongoClientConfig config,
             BeanContainer container,
             LaunchMode launchMode, ShutdownContext shutdown,
             List<String> codecProviders) {
         initialize(config, codecProviders);
 
         MongoClientProducer producer = container.instance(MongoClientProducer.class);
-        producer.initialize(client, asyncClient, null);
+        producer.initialize(client, reactiveMongoClient);
 
         if (!launchMode.isDevOrTest()) {
             shutdown.addShutdownTask(this::close);
@@ -45,9 +48,16 @@ public class MongoClientTemplate {
         return new RuntimeValue<>(client);
     }
 
+    public RuntimeValue<ReactiveMongoClient> configureTheReactiveClient() {
+        return new RuntimeValue<>(reactiveMongoClient);
+    }
+
     private void close() {
         if (client != null) {
             client.close();
+        }
+        if (reactiveMongoClient != null) {
+            reactiveMongoClient.close();
         }
     }
 
@@ -61,12 +71,15 @@ public class MongoClientTemplate {
 
         MongoClientSettings.Builder settings = MongoClientSettings.builder();
 
-        ConnectionString connectionString = new ConnectionString(config.connectionString);
-        settings.applyConnectionString(connectionString);
+        ConnectionString connectionString;
+        if (config.connectionString.isPresent()) {
+            connectionString = new ConnectionString(config.connectionString.get());
+            settings.applyConnectionString(connectionString);
+        }
 
         CodecRegistry registry = defaultCodecRegistry;
         if (!codecProviders.isEmpty()) {
-            registry = CodecRegistries.fromRegistries(registry,
+            registry = CodecRegistries.fromRegistries(defaultCodecRegistry,
                     CodecRegistries.fromProviders(getCodecProviders(codecProviders)));
         }
         settings.codecRegistry(registry);
@@ -103,6 +116,17 @@ public class MongoClientTemplate {
         }
 
         settings.applyToClusterSettings(builder -> {
+            if (!config.connectionString.isPresent()) {
+                // Parse hosts
+                List<ServerAddress> hosts = parseHosts(config.hosts);
+                builder.hosts(hosts);
+
+                if (hosts.size() == 1 && !config.replicaSetName.isPresent()) {
+                    builder.mode(ClusterConnectionMode.SINGLE);
+                } else {
+                    builder.mode(ClusterConnectionMode.MULTIPLE);
+                }
+            }
             config.localThreshold.ifPresent(i -> builder.localThreshold(i, TimeUnit.MILLISECONDS));
             config.maxWaitQueueSize.ifPresent(builder::maxWaitQueueSize);
             config.replicaSetName.ifPresent(builder::requiredReplicaSetName);
@@ -111,9 +135,12 @@ public class MongoClientTemplate {
 
         settings.applyToConnectionPoolSettings(builder -> {
             config.maxPoolSize.ifPresent(builder::maxSize);
+            config.minPoolSize.ifPresent(builder::minSize);
             config.maxWaitQueueSize.ifPresent(builder::maxWaitQueueSize);
             config.maxConnectionIdleTime.ifPresent(i -> builder.maxConnectionIdleTime(i, TimeUnit.MILLISECONDS));
             config.maxConnectionLifeTime.ifPresent(i -> builder.maxConnectionLifeTime(i, TimeUnit.MILLISECONDS));
+            config.maintenanceFrequency.ifPresent(i -> builder.maintenanceFrequency(i, TimeUnit.MILLISECONDS));
+            config.maintenanceInitialDelay.ifPresent(i -> builder.maintenanceInitialDelay(i, TimeUnit.MILLISECONDS));
         });
 
         settings.applyToServerSettings(
@@ -141,31 +168,17 @@ public class MongoClientTemplate {
             }
         });
 
-        //TODO Configure the Vert.x client
-        client = MongoClients.create(settings.build());
-        asyncClient = com.mongodb.async.client.MongoClients.create(settings.build());
-    }
-
-    List<? extends Codec<?>> getCodecs(List<String> classNames) {
-        List<Codec<?>> codecs = new ArrayList<>();
-        for (String name : classNames) {
-            try {
-                Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(name);
-                Codec codec = (Codec) clazz.newInstance();
-                codecs.add(codec);
-            } catch (Exception e) {
-                // TODO LOG ME
-                e.printStackTrace();
-            }
-        }
-        return codecs;
+        MongoClientSettings mongoConfiguration = settings.build();
+        client = MongoClients.create(mongoConfiguration);
+        reactiveMongoClient = new ReactiveMongoClientImpl(
+                com.mongodb.reactivestreams.client.MongoClients.create(mongoConfiguration));
     }
 
     List<CodecProvider> getCodecProviders(List<String> classNames) {
         List<CodecProvider> providers = new ArrayList<>();
         for (String name : classNames) {
             try {
-                Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(name);
+                Class<?> clazz = MongoClientTemplate.class.getClassLoader().loadClass(name);
                 providers.add((CodecProvider) clazz.newInstance());
             } catch (Exception e) {
                 // TODO LOG ME
@@ -215,5 +228,26 @@ public class MongoClientTemplate {
             }
             return credential;
         }
+    }
+
+    private static List<ServerAddress> parseHosts(List<String> addresses) {
+        if (addresses.isEmpty()) {
+            return Collections.singletonList(new ServerAddress(ServerAddress.defaultHost(), ServerAddress.defaultPort()));
+        }
+
+        return addresses.stream()
+                .map(String::trim)
+                .map(address -> {
+                    String[] segments = address.split(":");
+                    if (segments.length == 1) {
+                        // Host only, default port
+                        return new ServerAddress(address);
+                    } else if (segments.length == 2) {
+                        // Host and port
+                        return new ServerAddress(segments[0], Integer.parseInt(segments[1]));
+                    } else {
+                        throw new IllegalArgumentException("Invalid server address " + address);
+                    }
+                }).collect(Collectors.toList());
     }
 }

@@ -1,6 +1,7 @@
 package io.quarkus.mongo.deployment;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.bson.codecs.configuration.CodecProvider;
@@ -15,40 +16,49 @@ import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
-import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
-import io.quarkus.deployment.builditem.FeatureBuildItem;
-import io.quarkus.deployment.builditem.LaunchModeBuildItem;
-import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
+import io.quarkus.deployment.builditem.*;
+import io.quarkus.deployment.builditem.substrate.ReflectiveClassBuildItem;
+import io.quarkus.mongo.ReactiveMongoClient;
 import io.quarkus.mongo.runtime.MongoClientConfig;
 import io.quarkus.mongo.runtime.MongoClientProducer;
 import io.quarkus.mongo.runtime.MongoClientTemplate;
 import io.quarkus.runtime.RuntimeValue;
+import io.quarkus.vertx.deployment.VertxBuildItem;
 
 public class MongoClientProcessor {
 
     @BuildStep
-    AdditionalBeanBuildItem registerClients() {
+    AdditionalBeanBuildItem registerClientProducerBean() {
         return AdditionalBeanBuildItem.unremovableOf(MongoClientProducer.class);
     }
 
     @BuildStep
-    CodecProviderBuildItem collectionCodecs(CombinedIndexBuildItem indexBuildItem) {
+    CodecProviderBuildItem collectCodecProviders(CombinedIndexBuildItem indexBuildItem) {
         Collection<ClassInfo> codecProviderClasses = indexBuildItem.getIndex()
                 .getAllKnownImplementors(DotName.createSimple(CodecProvider.class.getName()));
-        return new CodecProviderBuildItem(
-                codecProviderClasses.stream().map(ClassInfo::toString).collect(Collectors.toList()));
+        List<String> names = codecProviderClasses.stream().map(ClassInfo::toString).collect(Collectors.toList());
+        return new CodecProviderBuildItem(names);
+    }
+
+    @BuildStep
+    List<ReflectiveClassBuildItem> addCodecsToNative(CodecProviderBuildItem providers) {
+        return providers.getCodecProviderClassNames().stream()
+                .map(s -> new ReflectiveClassBuildItem(true, true, false, s))
+                .collect(Collectors.toList());
     }
 
     @BuildStep
     @Record(ExecutionTime.RUNTIME_INIT)
-    MongoClientBuildItem build(BuildProducer<FeatureBuildItem> feature, MongoClientTemplate template,
+    MongoClientBuildItem build(BuildProducer<FeatureBuildItem> feature, MongoClientTemplate template, VertxBuildItem vertx,
             BeanContainerBuildItem beanContainer, LaunchModeBuildItem launchMode, ShutdownContextBuildItem shutdown,
             MongoClientConfig config, CodecProviderBuildItem codecs) {
+
         feature.produce(new FeatureBuildItem("mongodb"));
 
         RuntimeValue<MongoClient> client = template.configureTheClient(config, beanContainer.getValue(),
                 launchMode.getLaunchMode(), shutdown,
                 codecs.getCodecProviderClassNames());
-        return new MongoClientBuildItem(client);
+        RuntimeValue<ReactiveMongoClient> reactiveClient = template.configureTheReactiveClient();
+        return new MongoClientBuildItem(client, reactiveClient);
     }
 }
