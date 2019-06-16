@@ -46,12 +46,6 @@
             <version>4.4.5</version>
             <scope>test</scope>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>com.github.jnr</groupId>-->
-            <!--<artifactId>jnr-unixsocket</artifactId>-->
-            <!--<version>0.23</version>-->
-            <!--<optional>true</optional>-->
-        <!--</dependency>-->
     </dependencies>
 
     <build>
