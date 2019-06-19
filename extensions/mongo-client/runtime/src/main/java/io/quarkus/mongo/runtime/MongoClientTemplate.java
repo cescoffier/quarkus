@@ -88,15 +88,15 @@ public class MongoClientTemplate {
 
         config.applicationName.ifPresent(settings::applicationName);
 
-        config.credentials.ifPresent(cc -> {
-            MongoCredential credential = createMongoCredential(cc);
+        if (config.credentials != null) {
+            MongoCredential credential = createMongoCredential(config.credentials);
             if (credential != null) {
                 settings.credential(credential);
             }
-        });
+        }
 
-        if (config.writeConcern.isPresent()) {
-            WriteConcernConfig wc = config.writeConcern.get();
+        if (config.writeConcern != null) {
+            WriteConcernConfig wc = config.writeConcern;
             WriteConcern concern = (wc.safe ? WriteConcern.ACKNOWLEDGED : WriteConcern.UNACKNOWLEDGED)
                     .withJournal(wc.journal);
 
@@ -150,24 +150,6 @@ public class MongoClientTemplate {
             config.connectTimeout.ifPresent(i -> builder.connectTimeout(i, TimeUnit.MILLISECONDS));
         });
 
-        config.credentials.ifPresent(credentials -> {
-            MongoCredential credential = MongoCredential.createCredential(
-                    credentials.username.orElse(null),
-                    credentials.authSource.orElse(null),
-                    credentials.password.map(String::toCharArray).orElse(null));
-
-            if (credentials.authMechanism.isPresent()) {
-                credential = credential.withMechanism(
-                        AuthenticationMechanism.valueOf(credentials.authMechanism.get().toUpperCase()));
-            }
-
-            if (!credentials.authMechanismProperties.isEmpty()) {
-                for (Map.Entry<String, String> entry : credentials.authMechanismProperties.entrySet()) {
-                    credential = credential.withMechanismProperty(entry.getKey(), entry.getValue());
-                }
-            }
-        });
-
         MongoClientSettings mongoConfiguration = settings.build();
         client = MongoClients.create(mongoConfiguration);
         reactiveMongoClient = new ReactiveMongoClientImpl(
@@ -178,7 +160,7 @@ public class MongoClientTemplate {
         List<CodecProvider> providers = new ArrayList<>();
         for (String name : classNames) {
             try {
-                Class<?> clazz = MongoClientTemplate.class.getClassLoader().loadClass(name);
+                Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(name);
                 providers.add((CodecProvider) clazz.newInstance());
             } catch (Exception e) {
                 // TODO LOG ME
@@ -202,32 +184,43 @@ public class MongoClientTemplate {
         String username = config.username.orElse(null);
         if (username == null) {
             return null;
-        } else {
-            char[] password = config.password.map(String::toCharArray).orElse(null);
-            String authSource = config.authSource.orElse(null);
-            // AuthMechanism
-            AuthenticationMechanism mechanism = null;
-            if (config.authMechanism.isPresent()) {
-                mechanism = getAuthenticationMechanism(config.authMechanism.get());
-            }
-
-            // Create the MongoCredential instance.
-            MongoCredential credential;
-            if (mechanism == GSSAPI) {
-                credential = MongoCredential.createGSSAPICredential(username);
-            } else if (mechanism == PLAIN) {
-                credential = MongoCredential.createPlainCredential(username, authSource, password);
-            } else if (mechanism == MONGODB_X509) {
-                credential = MongoCredential.createMongoX509Credential(username);
-            } else if (mechanism == SCRAM_SHA_1) {
-                credential = MongoCredential.createScramSha1Credential(username, authSource, password);
-            } else if (mechanism == null) {
-                credential = MongoCredential.createCredential(username, authSource, password);
-            } else {
-                throw new IllegalArgumentException("Unsupported authentication mechanism " + mechanism);
-            }
-            return credential;
         }
+
+        char[] password = config.password.map(String::toCharArray).orElse(null);
+        //admin is the default auth source in mongo and null is not allowed
+        //TODO we should add a 'database' props and default to this one if the authSource is not set,
+        // this is the standard Mongo behaviour. We can then default to admin ...
+        String authSource = config.authSource.orElse("admin");
+        // AuthMechanism
+        AuthenticationMechanism mechanism = null;
+        if (config.authMechanism.isPresent()) {
+            mechanism = getAuthenticationMechanism(config.authMechanism.get());
+        }
+
+        // Create the MongoCredential instance.
+        MongoCredential credential;
+        if (mechanism == GSSAPI) {
+            credential = MongoCredential.createGSSAPICredential(username);
+        } else if (mechanism == PLAIN) {
+            credential = MongoCredential.createPlainCredential(username, authSource, password);
+        } else if (mechanism == MONGODB_X509) {
+            credential = MongoCredential.createMongoX509Credential(username);
+        } else if (mechanism == SCRAM_SHA_1) {
+            credential = MongoCredential.createScramSha1Credential(username, authSource, password);
+        } else if (mechanism == null) {
+            credential = MongoCredential.createCredential(username, authSource, password);
+        } else {
+            throw new IllegalArgumentException("Unsupported authentication mechanism " + mechanism);
+        }
+
+        //add the properties
+        if (!config.authMechanismProperties.isEmpty()) {
+            for (Map.Entry<String, String> entry : config.authMechanismProperties.entrySet()) {
+                credential = credential.withMechanismProperty(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return credential;
     }
 
     private static List<ServerAddress> parseHosts(List<String> addresses) {
