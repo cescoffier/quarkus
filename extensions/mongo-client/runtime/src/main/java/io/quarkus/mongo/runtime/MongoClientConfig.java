@@ -1,12 +1,12 @@
 package io.quarkus.mongo.runtime;
 
-import io.quarkus.runtime.annotations.ConfigItem;
-import io.quarkus.runtime.annotations.ConfigPhase;
-import io.quarkus.runtime.annotations.ConfigRoot;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+
+import io.quarkus.runtime.annotations.ConfigItem;
+import io.quarkus.runtime.annotations.ConfigPhase;
+import io.quarkus.runtime.annotations.ConfigRoot;
 
 @ConfigRoot(name = "mongodb", phase = ConfigPhase.RUN_TIME)
 public class MongoClientConfig {
@@ -186,8 +186,7 @@ public class MongoClientConfig {
     /**
      * Configures the write concern.
      */
-    @ConfigItem
-    public Optional<WriteConcernConfig> writeConcern;
+    public WriteConcernConfig writeConcern;
 
     /**
      * Configures the read preferences.
@@ -199,8 +198,7 @@ public class MongoClientConfig {
     /**
      * Configures the credentials and the authentication mechanism.
      */
-    @ConfigItem
-    public Optional<CredentialConfig> credentials;
+    public CredentialConfig credentials;
 
     /**
      * Configures the maximum number of concurrent operations allowed to wait for a server to become available.
