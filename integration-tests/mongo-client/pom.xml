@@ -29,11 +29,6 @@
             <!-- TODO Export to BOM -->
             <version>${project.version}</version>
         </dependency>
-        <!-- TODO this should not be required -->
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-smallrye-reactive-streams-operators</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>io.quarkus</groupId>
