@@ -62,11 +62,6 @@ public class MongoClientTemplate {
     }
 
     void initialize(MongoClientConfig config, List<String> codecProviders) {
-        if (client != null) {
-            // Already configured
-            return;
-        }
-
         CodecRegistry defaultCodecRegistry = com.mongodb.MongoClient.getDefaultCodecRegistry();
 
         MongoClientSettings.Builder settings = MongoClientSettings.builder();

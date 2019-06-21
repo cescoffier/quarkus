@@ -1,6 +1,8 @@
 package io.quarkus.mongo.runtime;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.BeforeDestroyed;
+import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Produces;
 import javax.inject.Singleton;
 
@@ -13,6 +15,11 @@ public class MongoClientProducer {
 
     private MongoClient client;
     private ReactiveMongoClient reactiveMongoClient;
+
+    public void onStop(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
+        this.client.close();
+        this.reactiveMongoClient.close();
+    }
 
     @Singleton
     @Produces
