@@ -54,9 +54,9 @@ public class MongoClientProcessor {
     @BuildStep
     @Record(ExecutionTime.RUNTIME_INIT)
     MongoClientBuildItem build(BuildProducer<FeatureBuildItem> feature, MongoClientTemplate template,
-            BeanContainerBuildItem beanContainer, LaunchModeBuildItem launchMode, ShutdownContextBuildItem shutdown,
-            MongoClientConfig config, CodecProviderBuildItem codecs,
-            SslNativeConfigBuildItem sslNativeConfig, BuildProducer<ExtensionSslNativeSupportBuildItem> sslNativeSupport) {
+                               BeanContainerBuildItem beanContainer, LaunchModeBuildItem launchMode, ShutdownContextBuildItem shutdown,
+                               MongoClientConfig config, CodecProviderBuildItem codecs,
+                               SslNativeConfigBuildItem sslNativeConfig, BuildProducer<ExtensionSslNativeSupportBuildItem> sslNativeSupport) {
 
         feature.produce(new FeatureBuildItem("mongodb"));
 
