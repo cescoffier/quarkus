@@ -58,10 +58,10 @@ public class MongoClientProcessor {
                                MongoClientConfig config, CodecProviderBuildItem codecs,
                                SslNativeConfigBuildItem sslNativeConfig, BuildProducer<ExtensionSslNativeSupportBuildItem> sslNativeSupport) {
 
-        feature.produce(new FeatureBuildItem("mongodb"));
+        feature.produce(new FeatureBuildItem(FeatureBuildItem.MONGO));
 
         if (!sslNativeConfig.isExplicitlyDisabled()) {
-            sslNativeSupport.produce(new ExtensionSslNativeSupportBuildItem("mongodb"));
+            sslNativeSupport.produce(new ExtensionSslNativeSupportBuildItem(FeatureBuildItem.MONGO));
         }
 
         RuntimeValue<MongoClient> client = template.configureTheClient(config, beanContainer.getValue(),
