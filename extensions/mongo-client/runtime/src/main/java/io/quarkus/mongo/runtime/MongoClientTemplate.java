@@ -25,12 +25,15 @@ import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Template;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Template
 public class MongoClientTemplate {
 
     private static volatile MongoClient client;
     private static volatile ReactiveMongoClient reactiveMongoClient;
+    private static final Logger LOGGER = LoggerFactory.getLogger(MongoClientTemplate.class);
 
     public RuntimeValue<MongoClient> configureTheClient(
             MongoClientConfig config,
@@ -158,8 +161,7 @@ public class MongoClientTemplate {
                 Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(name);
                 providers.add((CodecProvider) clazz.newInstance());
             } catch (Exception e) {
-                // TODO LOG ME
-                e.printStackTrace();
+               LOGGER.warn("Unable to load the codec provider class {} ", name, e);
             }
         }
         return providers;
