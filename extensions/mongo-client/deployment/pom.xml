@@ -33,8 +33,6 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-mongo-client</artifactId>
-            <!-- TODO Export to BOM / parent -->
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

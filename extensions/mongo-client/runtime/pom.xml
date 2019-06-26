@@ -34,7 +34,6 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-reactivestreams</artifactId>
-            <version>1.11.0</version>
         </dependency>
 
         <dependency>
