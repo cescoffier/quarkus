@@ -8,6 +8,7 @@ import java.util.concurrent.CompletionStage;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
 import com.mongodb.ReadPreference;
@@ -16,9 +17,9 @@ import com.mongodb.client.model.CreateViewOptions;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.reactivestreams.client.*;
 
-import io.quarkus.mongo.ReactiveMongoCollection;
+import io.quarkus.mongo.*;
 
-public class ReactiveMongoDatabaseImpl implements io.quarkus.mongo.ReactiveMongoDatabase {
+public class ReactiveMongoDatabaseImpl implements ReactiveMongoDatabase {
 
     private final MongoDatabase database;
 
@@ -138,8 +139,26 @@ public class ReactiveMongoDatabaseImpl implements io.quarkus.mongo.ReactiveMongo
     }
 
     @Override
+    public PublisherBuilder<Document> listCollections(CollectionListOptions options) {
+        return ReactiveStreams.fromPublisher(apply(options, database.listCollections()));
+    }
+
+    @Override
     public <T> PublisherBuilder<T> listCollections(Class<T> clazz) {
         return toPublisherBuilder(database.listCollections(clazz));
+    }
+
+    @Override
+    public <T> PublisherBuilder<T> listCollections(Class<T> clazz, CollectionListOptions options) {
+        return ReactiveStreams.fromPublisher(apply(options, database.listCollections(clazz)));
+    }
+
+    private <T> ListCollectionsPublisher<T> apply(CollectionListOptions options, ListCollectionsPublisher<T> collections) {
+        if (options == null) {
+            return collections;
+        } else {
+            return options.apply(collections);
+        }
     }
 
     @Override
@@ -148,8 +167,18 @@ public class ReactiveMongoDatabaseImpl implements io.quarkus.mongo.ReactiveMongo
     }
 
     @Override
+    public PublisherBuilder<Document> listCollections(ClientSession clientSession, CollectionListOptions options) {
+        return ReactiveStreams.fromPublisher(apply(options, database.listCollections(clientSession)));
+    }
+
+    @Override
     public <T> PublisherBuilder<T> listCollections(ClientSession clientSession, Class<T> clazz) {
         return toPublisherBuilder(database.listCollections(clientSession, clazz));
+    }
+
+    @Override
+    public <T> PublisherBuilder<T> listCollections(ClientSession clientSession, Class<T> clazz, CollectionListOptions options) {
+        return ReactiveStreams.fromPublisher(apply(options, database.listCollections(clientSession, clazz)));
     }
 
     @Override
@@ -243,8 +272,18 @@ public class ReactiveMongoDatabaseImpl implements io.quarkus.mongo.ReactiveMongo
     }
 
     @Override
+    public PublisherBuilder<ChangeStreamDocument<Document>> watch(ChangeStreamOptions options) {
+        return null;
+    }
+
+    @Override
     public <T> PublisherBuilder<ChangeStreamDocument<T>> watch(Class<T> clazz) {
         return toPublisherBuilder(database.watch(clazz));
+    }
+
+    @Override
+    public <T> PublisherBuilder<ChangeStreamDocument<T>> watch(Class<T> clazz, ChangeStreamOptions options) {
+        return null;
     }
 
     @Override
@@ -253,8 +292,19 @@ public class ReactiveMongoDatabaseImpl implements io.quarkus.mongo.ReactiveMongo
     }
 
     @Override
-    public <T> PublisherBuilder<ChangeStreamDocument<T>> watchA(List<? extends Bson> pipeline, Class<T> clazz) {
+    public PublisherBuilder<ChangeStreamDocument<Document>> watch(List<? extends Bson> pipeline, ChangeStreamOptions options) {
+        return null;
+    }
+
+    @Override
+    public <T> PublisherBuilder<ChangeStreamDocument<T>> watch(List<? extends Bson> pipeline, Class<T> clazz) {
         return toPublisherBuilder(database.watch(pipeline, clazz));
+    }
+
+    @Override
+    public <T> PublisherBuilder<ChangeStreamDocument<T>> watch(List<? extends Bson> pipeline, Class<T> clazz,
+            ChangeStreamOptions options) {
+        return null;
     }
 
     @Override
@@ -263,19 +313,42 @@ public class ReactiveMongoDatabaseImpl implements io.quarkus.mongo.ReactiveMongo
     }
 
     @Override
+    public PublisherBuilder<ChangeStreamDocument<Document>> watch(ClientSession clientSession, ChangeStreamOptions options) {
+        return null;
+    }
+
+    @Override
     public <T> PublisherBuilder<ChangeStreamDocument<T>> watch(ClientSession clientSession, Class<T> clazz) {
         return toPublisherBuilder(database.watch(clientSession, clazz));
     }
 
     @Override
-    public PublisherBuilder<ChangeStreamDocument<Document>> watchA(ClientSession clientSession, List<? extends Bson> pipeline) {
+    public <T> PublisherBuilder<ChangeStreamDocument<T>> watch(ClientSession clientSession, Class<T> clazz,
+            ChangeStreamOptions options) {
+        return null;
+    }
+
+    @Override
+    public PublisherBuilder<ChangeStreamDocument<Document>> watch(ClientSession clientSession, List<? extends Bson> pipeline) {
         return toPublisherBuilder(database.watch(clientSession, pipeline));
+    }
+
+    @Override
+    public PublisherBuilder<ChangeStreamDocument<Document>> watch(ClientSession clientSession, List<? extends Bson> pipeline,
+            ChangeStreamOptions options) {
+        return null;
     }
 
     @Override
     public <T> PublisherBuilder<ChangeStreamDocument<T>> watch(ClientSession clientSession, List<? extends Bson> pipeline,
             Class<T> clazz) {
         return toPublisherBuilder(database.watch(clientSession, pipeline, clazz));
+    }
+
+    @Override
+    public <T> PublisherBuilder<ChangeStreamDocument<T>> watch(ClientSession clientSession, List<? extends Bson> pipeline,
+            Class<T> clazz, ChangeStreamOptions options) {
+        return null;
     }
 
     @Override
@@ -305,8 +378,25 @@ public class ReactiveMongoDatabaseImpl implements io.quarkus.mongo.ReactiveMongo
     }
 
     @Override
+    public PublisherBuilder<Document> aggregate(List<? extends Bson> pipeline, AggregateOptions options) {
+        return toPublisherBuilder(apply(options, database.aggregate(pipeline)));
+    }
+
+    private <T> AggregatePublisher<T> apply(AggregateOptions options, AggregatePublisher<T> aggregate) {
+        if (options == null) {
+            return aggregate;
+        }
+        return options.apply(aggregate);
+    }
+
+    @Override
     public <T> PublisherBuilder<T> aggregate(List<? extends Bson> pipeline, Class<T> clazz) {
         return toPublisherBuilder(database.aggregate(pipeline, clazz));
+    }
+
+    @Override
+    public <T> PublisherBuilder<T> aggregate(List<? extends Bson> pipeline, Class<T> clazz, AggregateOptions options) {
+        return toPublisherBuilder(apply(options, database.aggregate(pipeline, clazz)));
     }
 
     @Override
@@ -315,7 +405,19 @@ public class ReactiveMongoDatabaseImpl implements io.quarkus.mongo.ReactiveMongo
     }
 
     @Override
+    public PublisherBuilder<Document> aggregate(ClientSession clientSession, List<? extends Bson> pipeline,
+            AggregateOptions options) {
+        return toPublisherBuilder(apply(options, database.aggregate(clientSession, pipeline)));
+    }
+
+    @Override
     public <T> PublisherBuilder<T> aggregate(ClientSession clientSession, List<? extends Bson> pipeline, Class<T> clazz) {
         return toPublisherBuilder(database.aggregate(clientSession, pipeline, clazz));
+    }
+
+    @Override
+    public <T> PublisherBuilder<T> aggregate(ClientSession clientSession, List<? extends Bson> pipeline, Class<T> clazz,
+            AggregateOptions options) {
+        return toPublisherBuilder(apply(options, database.aggregate(clientSession, pipeline, clazz)));
     }
 }

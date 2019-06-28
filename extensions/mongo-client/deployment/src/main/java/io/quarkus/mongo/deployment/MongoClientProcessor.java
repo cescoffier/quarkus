@@ -4,12 +4,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
-import io.quarkus.deployment.builditem.ExtensionSslNativeSupportBuildItem;
-import io.quarkus.deployment.builditem.FeatureBuildItem;
-import io.quarkus.deployment.builditem.LaunchModeBuildItem;
-import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
-import io.quarkus.deployment.builditem.SslNativeConfigBuildItem;
 import org.bson.codecs.configuration.CodecProvider;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
@@ -22,6 +16,12 @@ import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
+import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
+import io.quarkus.deployment.builditem.ExtensionSslNativeSupportBuildItem;
+import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.builditem.LaunchModeBuildItem;
+import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
+import io.quarkus.deployment.builditem.SslNativeConfigBuildItem;
 import io.quarkus.deployment.builditem.substrate.ReflectiveClassBuildItem;
 import io.quarkus.mongo.ReactiveMongoClient;
 import io.quarkus.mongo.runtime.MongoClientConfig;
@@ -54,9 +54,9 @@ public class MongoClientProcessor {
     @BuildStep
     @Record(ExecutionTime.RUNTIME_INIT)
     MongoClientBuildItem build(BuildProducer<FeatureBuildItem> feature, MongoClientTemplate template,
-                               BeanContainerBuildItem beanContainer, LaunchModeBuildItem launchMode, ShutdownContextBuildItem shutdown,
-                               MongoClientConfig config, CodecProviderBuildItem codecs,
-                               SslNativeConfigBuildItem sslNativeConfig, BuildProducer<ExtensionSslNativeSupportBuildItem> sslNativeSupport) {
+            BeanContainerBuildItem beanContainer, LaunchModeBuildItem launchMode, ShutdownContextBuildItem shutdown,
+            MongoClientConfig config, CodecProviderBuildItem codecs,
+            SslNativeConfigBuildItem sslNativeConfig, BuildProducer<ExtensionSslNativeSupportBuildItem> sslNativeSupport) {
 
         feature.produce(new FeatureBuildItem(FeatureBuildItem.MONGO));
 

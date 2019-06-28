@@ -11,6 +11,7 @@ import java.util.concurrent.CompletionStage;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 
 import com.mongodb.MongoNamespace;
 import com.mongodb.bulk.BulkWriteResult;
@@ -19,6 +20,9 @@ import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.*;
+
+import io.quarkus.mongo.*;
+import io.quarkus.mongo.FindOptions;
 
 public class ReactiveMongoCollectionImpl<T> implements io.quarkus.mongo.ReactiveMongoCollection<T> {
 
@@ -34,7 +38,7 @@ public class ReactiveMongoCollectionImpl<T> implements io.quarkus.mongo.Reactive
     }
 
     @Override
-    public Class getDocumentClass() {
+    public Class<T> getDocumentClass() {
         return collection.getDocumentClass();
     }
 
@@ -119,6 +123,35 @@ public class ReactiveMongoCollectionImpl<T> implements io.quarkus.mongo.Reactive
         return toPublisherBuilder(collection.distinct(clientSession, fieldName, filter, clazz));
     }
 
+    private <D> DistinctPublisher<D> apply(DistinctOptions options, DistinctPublisher<D> stream) {
+        if (options == null) {
+            return stream;
+        }
+        return options.apply(stream);
+    }
+
+    @Override
+    public <D> PublisherBuilder<D> distinct(String fieldName, Class<D> clazz, DistinctOptions options) {
+        return toPublisherBuilder(apply(options, collection.distinct(fieldName, clazz)));
+    }
+
+    @Override
+    public <D> PublisherBuilder<D> distinct(String fieldName, Bson filter, Class<D> clazz, DistinctOptions options) {
+        return toPublisherBuilder(apply(options, collection.distinct(fieldName, filter, clazz)));
+    }
+
+    @Override
+    public <D> PublisherBuilder<D> distinct(ClientSession clientSession, String fieldName, Class<D> clazz,
+            DistinctOptions options) {
+        return toPublisherBuilder(apply(options, collection.distinct(clientSession, fieldName, clazz)));
+    }
+
+    @Override
+    public <D> PublisherBuilder<D> distinct(ClientSession clientSession, String fieldName, Bson filter, Class<D> clazz,
+            DistinctOptions options) {
+        return toPublisherBuilder(apply(options, collection.distinct(clientSession, fieldName, filter, clazz)));
+    }
+
     @Override
     public FindPublisher<T> findAsPublisher() {
         return collection.find();
@@ -199,6 +232,53 @@ public class ReactiveMongoCollectionImpl<T> implements io.quarkus.mongo.Reactive
         return toPublisherBuilder(collection.find(clientSession, filter, clazz));
     }
 
+    private <D> FindPublisher<D> apply(FindOptions options, FindPublisher<D> publisher) {
+        if (options == null) {
+            return publisher;
+        }
+        return options.apply(publisher);
+    }
+
+    @Override
+    public PublisherBuilder<T> find(FindOptions options) {
+        return toPublisherBuilder(apply(options, collection.find()));
+    }
+
+    @Override
+    public <D> PublisherBuilder<D> find(Class<D> clazz, FindOptions options) {
+        return toPublisherBuilder(apply(options, collection.find(clazz)));
+    }
+
+    @Override
+    public PublisherBuilder<T> find(Bson filter, FindOptions options) {
+        return toPublisherBuilder(apply(options, collection.find(filter)));
+    }
+
+    @Override
+    public <D> PublisherBuilder<D> find(Bson filter, Class<D> clazz, FindOptions options) {
+        return toPublisherBuilder(apply(options, collection.find(filter, clazz)));
+    }
+
+    @Override
+    public PublisherBuilder<T> find(ClientSession clientSession, FindOptions options) {
+        return toPublisherBuilder(apply(options, collection.find(clientSession)));
+    }
+
+    @Override
+    public <D> PublisherBuilder<D> find(ClientSession clientSession, Class<D> clazz, FindOptions options) {
+        return toPublisherBuilder(apply(options, collection.find(clientSession, clazz)));
+    }
+
+    @Override
+    public PublisherBuilder<T> find(ClientSession clientSession, Bson filter, FindOptions options) {
+        return toPublisherBuilder(apply(options, collection.find(clientSession, filter)));
+    }
+
+    @Override
+    public <D> PublisherBuilder<D> find(ClientSession clientSession, Bson filter, Class<D> clazz, FindOptions options) {
+        return toPublisherBuilder(apply(options, collection.find(clientSession, filter, clazz)));
+    }
+
     @Override
     public AggregatePublisher<Document> aggregateAsPublisher(List<? extends Bson> pipeline) {
         return collection.aggregate(pipeline);
@@ -214,6 +294,15 @@ public class ReactiveMongoCollectionImpl<T> implements io.quarkus.mongo.Reactive
         return collection.aggregate(clientSession, pipeline);
     }
 
+    /**
+     * Aggregates documents according to the specified aggregation pipeline.
+     *
+     * @param clientSession the client session with which to associate this operation
+     * @param pipeline the aggregate pipeline
+     * @param clazz the class to decode each document into
+     * @param <D> the target document type of the iterable.
+     * @return a stream containing the result of the aggregation operation
+     */
     @Override
     public <D> AggregatePublisher<D> aggregateAsPublisher(ClientSession clientSession, List<? extends Bson> pipeline,
             Class<D> clazz) {
@@ -238,6 +327,35 @@ public class ReactiveMongoCollectionImpl<T> implements io.quarkus.mongo.Reactive
     @Override
     public <D> PublisherBuilder<D> aggregate(ClientSession clientSession, List<? extends Bson> pipeline, Class<D> clazz) {
         return toPublisherBuilder(collection.aggregate(clientSession, pipeline, clazz));
+    }
+
+    private <D> AggregatePublisher<D> apply(AggregateOptions options, AggregatePublisher<D> publisher) {
+        if (options == null) {
+            return publisher;
+        }
+        return options.apply(publisher);
+    }
+
+    @Override
+    public PublisherBuilder<Document> aggregate(List<? extends Bson> pipeline, AggregateOptions options) {
+        return ReactiveStreams.fromPublisher(apply(options, collection.aggregate(pipeline)));
+    }
+
+    @Override
+    public <D> PublisherBuilder<D> aggregate(List<? extends Bson> pipeline, Class<D> clazz, AggregateOptions options) {
+        return ReactiveStreams.fromPublisher(apply(options, collection.aggregate(pipeline, clazz)));
+    }
+
+    @Override
+    public PublisherBuilder<Document> aggregate(ClientSession clientSession, List<? extends Bson> pipeline,
+            AggregateOptions options) {
+        return ReactiveStreams.fromPublisher(apply(options, collection.aggregate(clientSession, pipeline)));
+    }
+
+    @Override
+    public <D> PublisherBuilder<D> aggregate(ClientSession clientSession, List<? extends Bson> pipeline, Class<D> clazz,
+            AggregateOptions options) {
+        return ReactiveStreams.fromPublisher(apply(options, collection.aggregate(clientSession, pipeline, clazz)));
     }
 
     @Override
@@ -323,6 +441,57 @@ public class ReactiveMongoCollectionImpl<T> implements io.quarkus.mongo.Reactive
     }
 
     @Override
+    public PublisherBuilder<ChangeStreamDocument<Document>> watch(ChangeStreamOptions options) {
+        return toPublisherBuilder(apply(options, collection.watch()));
+    }
+
+    private <D> ChangeStreamPublisher<D> apply(ChangeStreamOptions options, ChangeStreamPublisher<D> watch) {
+        if (options == null) {
+            return watch;
+        }
+        return options.apply(watch);
+    }
+
+    @Override
+    public <D> PublisherBuilder<ChangeStreamDocument<D>> watch(Class<D> clazz, ChangeStreamOptions options) {
+        return toPublisherBuilder(apply(options, collection.watch(clazz)));
+    }
+
+    @Override
+    public PublisherBuilder<ChangeStreamDocument<Document>> watch(List<? extends Bson> pipeline, ChangeStreamOptions options) {
+        return toPublisherBuilder(apply(options, collection.watch(pipeline)));
+    }
+
+    @Override
+    public <D> PublisherBuilder<ChangeStreamDocument<D>> watch(List<? extends Bson> pipeline, Class<D> clazz,
+            ChangeStreamOptions options) {
+        return toPublisherBuilder(apply(options, collection.watch(pipeline, clazz)));
+    }
+
+    @Override
+    public PublisherBuilder<ChangeStreamDocument<Document>> watch(ClientSession clientSession, ChangeStreamOptions options) {
+        return toPublisherBuilder(apply(options, collection.watch(clientSession)));
+    }
+
+    @Override
+    public <D> PublisherBuilder<ChangeStreamDocument<D>> watch(ClientSession clientSession, Class<D> clazz,
+            ChangeStreamOptions options) {
+        return toPublisherBuilder(apply(options, collection.watch(clientSession, clazz)));
+    }
+
+    @Override
+    public PublisherBuilder<ChangeStreamDocument<Document>> watch(ClientSession clientSession, List<? extends Bson> pipeline,
+            ChangeStreamOptions options) {
+        return toPublisherBuilder(apply(options, collection.watch(clientSession, pipeline)));
+    }
+
+    @Override
+    public <D> PublisherBuilder<ChangeStreamDocument<D>> watch(ClientSession clientSession, List<? extends Bson> pipeline,
+            Class<D> clazz, ChangeStreamOptions options) {
+        return toPublisherBuilder(apply(options, collection.watch(clientSession, pipeline, clazz)));
+    }
+
+    @Override
     public MapReducePublisher<Document> mapReduceAsPublisher(String mapFunction, String reduceFunction) {
         return collection.mapReduce(mapFunction, reduceFunction);
     }
@@ -346,23 +515,54 @@ public class ReactiveMongoCollectionImpl<T> implements io.quarkus.mongo.Reactive
 
     @Override
     public PublisherBuilder<Document> mapReduce(String mapFunction, String reduceFunction) {
-        return toPublisherBuilder(collection.mapReduce(mapFunction, reduceFunction));
+        return toPublisherBuilder(mapReduceAsPublisher(mapFunction, reduceFunction));
     }
 
     @Override
     public <D> PublisherBuilder<D> mapReduce(String mapFunction, String reduceFunction, Class<D> clazz) {
-        return toPublisherBuilder(collection.mapReduce(mapFunction, reduceFunction, clazz));
+        return toPublisherBuilder(mapReduceAsPublisher(mapFunction, reduceFunction, clazz));
     }
 
     @Override
     public PublisherBuilder<Document> mapReduce(ClientSession clientSession, String mapFunction, String reduceFunction) {
-        return toPublisherBuilder(collection.mapReduce(clientSession, mapFunction, reduceFunction));
+        return toPublisherBuilder(mapReduceAsPublisher(clientSession, mapFunction, reduceFunction));
     }
 
     @Override
     public <D> PublisherBuilder<D> mapReduce(ClientSession clientSession, String mapFunction, String reduceFunction,
             Class<D> clazz) {
-        return toPublisherBuilder(collection.mapReduce(clientSession, mapFunction, reduceFunction, clazz));
+        return toPublisherBuilder(mapReduceAsPublisher(clientSession, mapFunction, reduceFunction, clazz));
+    }
+
+    @Override
+    public PublisherBuilder<Document> mapReduce(String mapFunction, String reduceFunction, MapReduceOptions options) {
+        return ReactiveStreams.fromPublisher(apply(options, mapReduceAsPublisher(mapFunction, reduceFunction)));
+    }
+
+    private <D> MapReducePublisher<D> apply(MapReduceOptions options, MapReducePublisher<D> mapReduce) {
+        if (options == null) {
+            return mapReduce;
+        }
+        return options.apply(mapReduce);
+    }
+
+    @Override
+    public <D> PublisherBuilder<D> mapReduce(String mapFunction, String reduceFunction, Class<D> clazz,
+            MapReduceOptions options) {
+        return ReactiveStreams.fromPublisher(apply(options, mapReduceAsPublisher(mapFunction, reduceFunction, clazz)));
+    }
+
+    @Override
+    public PublisherBuilder<Document> mapReduce(ClientSession clientSession, String mapFunction, String reduceFunction,
+            MapReduceOptions options) {
+        return ReactiveStreams.fromPublisher(apply(options, mapReduceAsPublisher(clientSession, mapFunction, reduceFunction)));
+    }
+
+    @Override
+    public <D> PublisherBuilder<D> mapReduce(ClientSession clientSession, String mapFunction, String reduceFunction,
+            Class<D> clazz, MapReduceOptions options) {
+        return ReactiveStreams
+                .fromPublisher(apply(options, mapReduceAsPublisher(clientSession, mapFunction, reduceFunction, clazz)));
     }
 
     @Override

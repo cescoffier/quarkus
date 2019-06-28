@@ -18,26 +18,38 @@ import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.reactivex.RxHelper;
 
-public class Wrappers {
+class Wrappers {
     private static final Supplier<RuntimeException> UNEXPECTED_EMPTY_STREAM = () -> new IllegalStateException(
             "Unexpected empty stream");
 
+    private Wrappers() {
+        // Avoid direct instantiation.
+    }
+
     static <T> CompletionStage<T> toCompletionStage(Publisher<T> publisher) {
-        @Nullable
         Context context = Vertx.currentContext();
         CompletionStage<Optional<T>> run = ReactiveStreams.fromPublisher(publisher)
                 .findFirst()
                 .run();
         CompletableFuture<T> cf = new CompletableFuture<>();
-        run.thenAccept(opt -> {
+        run.whenComplete((opt, err) -> {
             if (context != null) {
-                context.runOnContext(x -> cf.complete(opt.orElseThrow(UNEXPECTED_EMPTY_STREAM)));
+                context.runOnContext(x -> completeOrFailedTheFuture(cf, opt, err));
             } else {
-                cf.complete(opt.orElseThrow(UNEXPECTED_EMPTY_STREAM));
+                completeOrFailedTheFuture(cf, opt, err);
             }
         });
         return cf;
 
+    }
+
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    private static <T> void completeOrFailedTheFuture(CompletableFuture<T> cf, Optional<T> opt, Throwable err) {
+        if (err != null) {
+            cf.completeExceptionally(err);
+        } else {
+            cf.complete(opt.orElseThrow(UNEXPECTED_EMPTY_STREAM));
+        }
     }
 
     static <T> CompletionStage<List<T>> toCompletionStageOfList(Publisher<T> publisher) {

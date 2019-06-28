@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.mongodb.*;
 import com.mongodb.client.MongoClient;
@@ -25,8 +27,6 @@ import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Template;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Template
 public class MongoClientTemplate {
@@ -161,7 +161,7 @@ public class MongoClientTemplate {
                 Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(name);
                 providers.add((CodecProvider) clazz.newInstance());
             } catch (Exception e) {
-               LOGGER.warn("Unable to load the codec provider class {} ", name, e);
+                LOGGER.warn("Unable to load the codec provider class {} ", name, e);
             }
         }
         return providers;
