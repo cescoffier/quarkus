@@ -92,11 +92,15 @@ public class MutinyTest {
                     List<Pet> pets = new CopyOnWriteArrayList<>();
                     eventSource.register(event -> {
                         Pet pet = event.readData(Pet.class, MediaType.APPLICATION_JSON_TYPE);
+                        System.out.println("Got " + pet.getName());
                         pets.add(pet);
                         if (pets.size() == 5) {
+                            System.out.println("Completing - got 5");
                             uniEmitter.complete(pets);
                         }
                     }, ex -> {
+                        System.out.println("SSE failed with " + ex);
+                        ex.printStackTrace();
                         uniEmitter.fail(new IllegalStateException("SSE failure", ex));
                     });
                     eventSource.open();
