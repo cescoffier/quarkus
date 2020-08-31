@@ -57,6 +57,7 @@ public class SomeService {
                 new Pet().setName("plume").setKind("dog"),
                 new Pet().setName("titi").setKind("bird"),
                 new Pet().setName("rex").setKind("mouse"))
+                .emitOn(executor)
                 .onFailure().invoke(t -> System.out.println("Stream failed" + t))
                 .onCompletion().invoke(() -> System.out.println("Completed"));
     }
