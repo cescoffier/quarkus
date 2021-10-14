@@ -128,7 +128,7 @@
         <junit.jupiter.version>5.8.1</junit.jupiter.version>
         <testng.version>6.14.2</testng.version>
         <assertj.version>3.20.2</assertj.version>
-        <infinispan.version>13.0.0.CR2</infinispan.version>
+        <infinispan.version>13.0.0.Final</infinispan.version>
         <infinispan.protostream.version>4.4.1.Final</infinispan.protostream.version>
         <caffeine.version>2.9.2</caffeine.version>
         <netty.version>4.1.68.Final</netty.version>
@@ -4826,6 +4826,11 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-component-annotations</artifactId>
                 <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.quarkus</groupId>
+                <artifactId>quarkus-test-infinispan-client</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.reactivestreams</groupId>
