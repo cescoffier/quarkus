@@ -30,23 +30,10 @@ public class TrustStoreRuntimeConfig {
     public Optional<String> type = Optional.empty();
 
     /**
-     * The path to the trust store file.
-     * For trust store composed of multiple files (like a set of {@code PEM} files), use {@link #paths}
-     *
-     * You cannot use {@code #path} and {@link #paths} together.
+     * The paths to the trust store (certificate) files.
      */
     @ConfigItem
-    public Optional<String> path = Optional.empty();
-
-    /**
-     * The paths to the trust store files.
-     * This attribute is used for trust store composed of multiple files (like a set of {@code PEM} files).
-     * If your key store has a single file, use {@link #path}
-     *
-     * You cannot use {@link #path} and {@code paths} together.
-     */
-    @ConfigItem
-    public Optional<List<String>> paths = Optional.empty();
+    public List<String> certs;
 
     /**
      * Extra parameters that will be passed to the trust store factory.
@@ -56,18 +43,11 @@ public class TrustStoreRuntimeConfig {
 
 
     public void validate(String bucket) {
-        if (path.isPresent()  && paths.isPresent()) {
-            throw new ConfigurationException("The TLS trust store " + bucket + " cannot contain `path` and `paths`");
-        }
-        if (path.isEmpty()  && paths.isEmpty()) {
-            throw new ConfigurationException("The TLS trust store " + bucket + " must contain either `path` or `paths`");
+        if (certs.isEmpty()) {
+            throw new ConfigurationException("Expected cert-paths to be set in "  + bucket + " trust-store configuration");
         }
         if (type.isEmpty()) {
-            if (path.isPresent()) {
-                type = Optional.ofNullable(TlsBucketUtil.findStoreType(path.get()));
-            } else if (! paths.get().isEmpty())  {
-                type = Optional.ofNullable(TlsBucketUtil.findStoreType(paths.get().get(0)));
-            }
+            type = Optional.ofNullable(TlsBucketUtil.findStoreType(certs.get(0)));
             if (type.isEmpty()) {
                 throw new ConfigurationException("Unable to detect the trust store type for the TLS configuration "
                         + bucket + ". You must explicitly set the '"

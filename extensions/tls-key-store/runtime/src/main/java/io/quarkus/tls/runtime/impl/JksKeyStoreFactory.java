@@ -1,6 +1,5 @@
 package io.quarkus.tls.runtime.impl;
 
-import io.quarkus.arc.Arc;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.tls.runtime.TlsKeyStore;
 import io.quarkus.tls.runtime.config.KeyStoreRuntimeConfig;
@@ -8,16 +7,22 @@ import io.quarkus.tls.runtime.spi.TlsKeyStoreFactory;
 import io.vertx.core.net.JksOptions;
 import io.vertx.mutiny.core.Vertx;
 
-import java.io.File;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Typed;
+import javax.inject.Inject;
 import java.util.Optional;
 
+@ApplicationScoped
+@Typed(TlsKeyStoreFactory.class)
 public class JksKeyStoreFactory implements TlsKeyStoreFactory {
 
     private static final String TYPE = "JKS";
+    private final Vertx vertx;
+
+    @Inject
+    public JksKeyStoreFactory(Vertx vertx) {
+        this.vertx = vertx;
+    }
 
     @Override
     public String type() {
@@ -30,7 +35,6 @@ public class JksKeyStoreFactory implements TlsKeyStoreFactory {
         store.validate();
         return store;
     }
-
 
     private class JksKeyStore implements TlsKeyStore {
 
@@ -58,13 +62,14 @@ public class JksKeyStoreFactory implements TlsKeyStoreFactory {
         }
 
         @Override
-        public String getPath() {
-            return config.path;
+        public String getKey() {
+            return config.key;
         }
 
         @Override
-        public File getFile() {
-            return new File(config.path);
+        public Optional<String> getCert() {
+            // Not supported for JKS, everything is in the same file.
+            return Optional.empty();
         }
 
         @Override
@@ -87,39 +92,21 @@ public class JksKeyStoreFactory implements TlsKeyStoreFactory {
             return new JksOptions()
                     .setAlias(getAlias().orElse(null))
                     .setAliasPassword(getAliasPassword().orElse(null))
-                    .setPath(getPath())
+                    .setPath(getKey())
                     .setPassword(getPassword().orElse(null));
         }
 
         public void validate() {
-            Vertx vertx = Arc.container().instance(Vertx.class).get();
-            KeyStore store;
-            try {
-                store = getVertxKeyStoreOptions().loadKeyStore(vertx.getDelegate());
-            } catch (Exception e) {
-                throw new ConfigurationException("Unable to read TLS key store " + name + " + configured to " + getPath(), e);
+            if (config.cert.isPresent()) {
+                throw new ConfigurationException("The JKS key store " + name + " does not support the `cert` attribute as JKS files contain both the key and the certificate");
             }
-
-            if (getAlias().isPresent()) {
+            VertxValidationUtil.validateKeyStore(name, this, () -> {
                 try {
-                    String alias = getAlias().get();
-                    if (!store.containsAlias(alias)  || !store.isKeyEntry(alias)) {
-                        throw new ConfigurationException("TLS key store " + name + " configured with an unknown alias: " + alias);
-                    }
-                } catch (KeyStoreException e) {
-                    throw new ConfigurationException("Invalid TLS key store " + name, e);
+                    return getVertxKeyStoreOptions().loadKeyStore(vertx.getDelegate());
+                } catch (Exception e) {
+                    throw new ConfigurationException("Unable to load key store " + name, e);
                 }
-            }
-
-            if (getAliasPassword().isPresent()) {
-                try {
-                    if (store.getKey(getAlias().get(), getAliasPassword().get().toCharArray()) == null) {
-                        throw new ConfigurationException("Wrong alias / alias-password for key store " + name);
-                    }
-                } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
-                    throw new ConfigurationException("Unable to read the key store " + name, e);
-                }
-            }
+            });
         }
     }
 }

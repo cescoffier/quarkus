@@ -705,6 +705,10 @@ public class VertxHttpRecorder {
         serverOptions.setMaxFormAttributeSize(httpConfiguration.limits.maxFormAttributeSize.asBigInteger().intValueExact());
         setIdleTimeout(httpConfiguration, serverOptions);
 
+        if (sslConfig.tlsConfigName.isPresent()) {
+
+        }
+
         if (!certificates.isEmpty() && !keys.isEmpty()) {
             createPemKeyCertOptions(certificates, keys, serverOptions);
         } else if (keyStoreFile.isPresent()) {
@@ -716,8 +720,8 @@ public class VertxHttpRecorder {
                     sslConfig.certificate.keyStoreKeyAlias,
                     sslConfig.certificate.keyStoreKeyPassword);
             serverOptions.setKeyCertOptions(options);
-        } else {
-            return null;
+        } else if (hasDefaultTlsConfig()) {
+
         }
 
         if (trustStoreFile.isPresent()) {

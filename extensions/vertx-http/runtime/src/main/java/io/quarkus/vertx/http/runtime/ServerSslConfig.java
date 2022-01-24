@@ -12,6 +12,12 @@ import io.quarkus.runtime.annotations.DefaultConverter;
  */
 @ConfigGroup
 public class ServerSslConfig {
+
+    /**
+     * The name of the TLS configuration to use.
+     */
+    public Optional<String> tlsConfigName;
+
     /**
      * The server certificate configuration.
      */

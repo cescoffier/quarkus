@@ -4,30 +4,27 @@ import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
-import io.quarkus.arc.Arc;
-import io.quarkus.runtime.configuration.ConfigurationException;
-import io.quarkus.tls.runtime.TlsTrustStore;
-import io.quarkus.tls.runtime.config.TrustStoreRuntimeConfig;
-import io.quarkus.tls.runtime.spi.TlsKeyStoreFactory;
-import io.quarkus.tls.runtime.spi.TlsTrustStoreFactory;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.mutiny.core.Vertx;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
+import io.quarkus.runtime.configuration.ConfigurationException;
+import io.quarkus.tls.runtime.TlsTrustStore;
+import io.quarkus.tls.runtime.config.TrustStoreRuntimeConfig;
+import io.quarkus.tls.runtime.spi.TlsTrustStoreFactory;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.mutiny.core.Vertx;
+
 @ApplicationScoped
 @Typed(TlsTrustStoreFactory.class)
-public class PfxTrustStoreFactory implements TlsTrustStoreFactory {
+public class PemTrustStoreFactory implements TlsTrustStoreFactory {
 
     private static final String TYPE = "P12";
 
     private final Vertx vertx;
 
     @Inject
-    public PfxTrustStoreFactory(Vertx vertx) {
+    public PemTrustStoreFactory(Vertx vertx) {
         this.vertx = vertx;
     }
 
@@ -55,7 +52,7 @@ public class PfxTrustStoreFactory implements TlsTrustStoreFactory {
 
         @Override
         public String getType() {
-            return PfxTrustStoreFactory.this.type();
+            return PemTrustStoreFactory.this.type();
         }
 
         @Override
@@ -64,13 +61,13 @@ public class PfxTrustStoreFactory implements TlsTrustStoreFactory {
         }
 
         @Override
-        public String getProvider() {
-            return null;
+        public List<String> getCertificatePaths() {
+            return config.certs;
         }
 
         @Override
-        public List<String> getCertificatePaths() {
-            return config.certs;
+        public String getProvider() {
+            return null;
         }
 
         @Override
@@ -81,24 +78,23 @@ public class PfxTrustStoreFactory implements TlsTrustStoreFactory {
         @Override
         public PfxOptions getVertxTrustStoreOptions() {
             return new PfxOptions()
-                    .setPath(config.certs.get(0))
+                    .setPath(getCertificatePaths().get(0))
                     .setPassword(getPassword().orElse(null));
         }
 
         public void validate() {
             if (config.certs.isEmpty()) {
-                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "cert-paths") + " must be set for P12 trust store");
+                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "certs") + " must be set for P12 trust store");
             }
-
             if (config.certs.size() > 1) {
-                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "cert-paths") + " must contain a single path for P12 trust store");
+                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "certs") + " must contain a single P12 trust store");
             }
 
             try {
                 // Just verify it can be loaded.
                 getVertxTrustStoreOptions().loadKeyStore(vertx.getDelegate());
             } catch (Exception e) {
-                throw new ConfigurationException("Unable to read TLS key store " + name + " + configured to " + getCertificatePaths(), e);
+                throw new ConfigurationException("Unable to read TLS trust store " + name + " of type P12 and configured with " + getCertificatePaths(), e);
             }
 
         }

@@ -1,7 +1,5 @@
 package io.quarkus.tls.runtime;
 
-import java.io.File;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,24 +17,7 @@ public interface TlsTrustStore {
 
     String getProvider();
 
-    String getPath();
-
-    default List<String> getPaths() {
-        if (getPath() != null) {
-            return List.of(getPath());
-        }
-        return Collections.emptyList();
-    }
-
-    File getFile();
-
-    default List<File> getFiles() {
-        if (getFile() != null) {
-            return List.of(getFile());
-        }
-        return Collections.emptyList();
-    }
-
+    List<String> getCertificatePaths();
 
     Optional<String> getPassword();
 

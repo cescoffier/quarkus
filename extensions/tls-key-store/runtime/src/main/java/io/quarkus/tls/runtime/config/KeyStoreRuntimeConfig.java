@@ -32,7 +32,13 @@ public class KeyStoreRuntimeConfig {
      * The path to the key store file.
      */
     @ConfigItem
-    public String path;
+    public String key;
+
+    /**
+     * The path to the cert file if any.
+     */
+    @ConfigItem
+    public Optional<String> cert;
 
     /**
      * The key alias if the key store contains multiple keys.
@@ -56,7 +62,7 @@ public class KeyStoreRuntimeConfig {
     public void validate(String bucket) {
         // If type is not set, tries to detect it from the file name.
         if (type.isEmpty()) {
-            type = Optional.ofNullable(TlsBucketUtil.findStoreType(path));
+            type = Optional.ofNullable(TlsBucketUtil.findStoreType(key));
             if (type.isEmpty()) {
                 throw new ConfigurationException("Unable to detect the key store type for the TLS configuration "
                         + bucket + ". You must explicitly set the '"

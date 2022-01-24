@@ -9,6 +9,8 @@ import io.quarkus.tls.runtime.spi.TlsKeyStoreFactory;
 import io.quarkus.tls.runtime.spi.TlsTrustStoreFactory;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -17,14 +19,19 @@ import java.util.ServiceLoader;
 @ApplicationScoped
 public class TlsStore {
 
+    // TODO Registration API that others extension can use - like an Acme extension.
+
     private final Map<String, TlsKeyStore> keyStores = new HashMap<>();
     private final Map<String, TlsTrustStore> trustStores = new HashMap<>();
 
     private TlsKeyStore defaultKeyStore;
     private TlsTrustStore defaultTrustStore;
 
-    private final ServiceLoader<TlsTrustStoreFactory> trustStoreFactories = ServiceLoader.load(TlsTrustStoreFactory.class);
-    private final ServiceLoader<TlsKeyStoreFactory> keyStoreFactories = ServiceLoader.load(TlsKeyStoreFactory.class);
+    @Inject
+    Instance<TlsKeyStoreFactory> keyStoreFactories;
+
+    @Inject
+    Instance<TlsTrustStoreFactory> trustStoreFactories;
 
     /**
      * Receives the user configuration.

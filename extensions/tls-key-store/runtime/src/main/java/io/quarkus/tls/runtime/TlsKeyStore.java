@@ -2,9 +2,6 @@ package io.quarkus.tls.runtime;
 
 import io.vertx.core.net.KeyCertOptions;
 
-import java.io.File;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -18,23 +15,9 @@ public interface TlsKeyStore {
 
     String getProvider();
 
-    String getPath();
+    String getKey();
 
-    default List<String> getPaths() {
-        if (getPath() != null) {
-            return List.of(getPath());
-        }
-        return Collections.emptyList();
-    }
-
-    File getFile();
-
-    default List<File> getFiles() {
-        if (getFile() != null) {
-            return List.of(getFile());
-        }
-        return Collections.emptyList();
-    }
+    Optional<String> getCert();
 
     Optional<String> getAlias();
 

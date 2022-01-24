@@ -1,28 +1,30 @@
 package io.quarkus.tls.runtime.impl;
 
 import java.io.File;
+import java.util.List;
 import java.util.Optional;
-
-import io.quarkus.runtime.configuration.ConfigurationException;
-import io.quarkus.tls.runtime.TlsKeyStore;
-import io.quarkus.tls.runtime.config.KeyStoreRuntimeConfig;
-import io.quarkus.tls.runtime.spi.TlsKeyStoreFactory;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.mutiny.core.Vertx;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
+import io.netty.handler.ssl.PemPrivateKey;
+import io.quarkus.runtime.configuration.ConfigurationException;
+import io.quarkus.tls.runtime.TlsKeyStore;
+import io.quarkus.tls.runtime.config.KeyStoreRuntimeConfig;
+import io.quarkus.tls.runtime.spi.TlsKeyStoreFactory;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.mutiny.core.Vertx;
+
 @ApplicationScoped
 @Typed(TlsKeyStoreFactory.class)
-public class PfxKeyStoreFactory implements TlsKeyStoreFactory {
+public class PemKeyStoreFactory implements TlsKeyStoreFactory {
 
-    private static final String TYPE = "P12";
+    private static final String TYPE = "PEM";
     private final Vertx vertx;
 
     @Inject
-    public PfxKeyStoreFactory(Vertx vertx) {
+    public PemKeyStoreFactory(Vertx vertx) {
         this.vertx = vertx;
     }
 
@@ -33,24 +35,24 @@ public class PfxKeyStoreFactory implements TlsKeyStoreFactory {
 
     @Override
     public TlsKeyStore create(String name, KeyStoreRuntimeConfig config) {
-        PfxKeyStore store = new PfxKeyStore(name, config);
+        PemKeyStore store = new PemKeyStore(name, config);
         store.validate();
         return store;
     }
 
-    private class PfxKeyStore implements TlsKeyStore {
+    private class PemKeyStore implements TlsKeyStore {
 
         private final String name;
         private final KeyStoreRuntimeConfig config;
 
-        public PfxKeyStore(String name, KeyStoreRuntimeConfig config) {
+        public PemKeyStore(String name, KeyStoreRuntimeConfig config) {
             this.name = name;
             this.config = config;
         }
 
         @Override
         public String getType() {
-            return PfxKeyStoreFactory.this.type();
+            return PemKeyStoreFactory.this.type();
         }
 
         @Override
@@ -70,37 +72,49 @@ public class PfxKeyStoreFactory implements TlsKeyStoreFactory {
 
         @Override
         public Optional<String> getCert() {
-            return Optional.empty();
+            return config.cert;
         }
 
         @Override
         public Optional<String> getAlias() {
-            return config.alias;
+            // Not supported by PEM file
+            return Optional.empty();
         }
 
         @Override
         public Optional<String> getAliasPassword() {
-            return config.aliasPassword;
+            // Not supported by PEM file
+            return Optional.empty();
         }
 
         @Override
         public Optional<String> getPassword() {
-            return config.password;
+            // Not supported by PEM file
+            return Optional.empty();
         }
 
         @Override
-        public PfxOptions getVertxKeyStoreOptions() {
-            return new PfxOptions()
-                    .setAlias(getAlias().orElse(null))
-                    .setAliasPassword(getAliasPassword().orElse(null))
-                    .setPath(getKey())
-                    .setPassword(getPassword().orElse(null));
+        public PemKeyCertOptions getVertxKeyStoreOptions() {
+            return new PemKeyCertOptions()
+                    .addKeyPath(getKey())
+                    .addCertPath(getCert().orElseThrow());
         }
 
         public void validate() {
-            if (config.cert.isPresent()) {
-                throw new ConfigurationException("The P12 key store " + name + " does not support the `cert` attribute as P12 key stores contain both the key and the certificate");
+            // PEM specificities:
+            // - no password or alias
+            // - cert and key must be set
+            if (config.password.isPresent()) {
+                throw new ConfigurationException("Invalid PEM configuration " + name + ", PEM do not support `password`");
             }
+            if (config.alias.isPresent()) {
+                throw new ConfigurationException("Invalid PEM configuration " + name + ", PEM do not support `alias`");
+            }
+
+            if (getCert().isEmpty()) {
+                throw new ConfigurationException("Invalid PEM configuration " + name + ", `cert` must be set");
+            }
+
             VertxValidationUtil.validateKeyStore(name, this, () -> {
                 try {
                     return getVertxKeyStoreOptions().loadKeyStore(vertx.getDelegate());

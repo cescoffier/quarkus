@@ -1,9 +1,8 @@
 package io.quarkus.tls.runtime.impl;
 
-import java.io.File;
+import java.util.List;
 import java.util.Optional;
 
-import io.quarkus.arc.Arc;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.tls.runtime.TlsTrustStore;
 import io.quarkus.tls.runtime.config.TrustStoreRuntimeConfig;
@@ -11,9 +10,22 @@ import io.quarkus.tls.runtime.spi.TlsTrustStoreFactory;
 import io.vertx.core.net.JksOptions;
 import io.vertx.mutiny.core.Vertx;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Typed;
+import javax.inject.Inject;
+
+@ApplicationScoped
+@Typed(TlsTrustStoreFactory.class)
 public class JksTrustStoreFactory implements TlsTrustStoreFactory {
 
     private static final String TYPE = "JKS";
+
+    private final Vertx vertx;
+
+    @Inject
+    public JksTrustStoreFactory(Vertx vertx) {
+        this.vertx = vertx;
+    }
 
     @Override
     public String type() {
@@ -53,13 +65,8 @@ public class JksTrustStoreFactory implements TlsTrustStoreFactory {
         }
 
         @Override
-        public String getPath() {
-            return config.path.orElseThrow();
-        }
-
-        @Override
-        public File getFile() {
-            return new File(config.path.orElseThrow());
+        public List<String> getCertificatePaths() {
+            return config.certs;
         }
 
         @Override
@@ -70,21 +77,24 @@ public class JksTrustStoreFactory implements TlsTrustStoreFactory {
         @Override
         public JksOptions getVertxTrustStoreOptions() {
             return new JksOptions()
-                    .setPath(getPath())
+                    .setPath(getCertificatePaths().get(0))
                     .setPassword(getPassword().orElse(null));
         }
 
         public void validate() {
-            if (config.path.isEmpty()) {
-                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "path") + " must be set for JKS trust store");
+            if (config.certs.isEmpty()) {
+                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "cert-paths") + " must be set for JKS trust store");
             }
 
-            Vertx vertx = Arc.container().instance(Vertx.class).get();
+            if (config.certs.size() > 1) {
+                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "cert-paths") + " must contain a single path for JKS trust store");
+            }
+
             try {
                 // Just verify it can be loaded.
                 getVertxTrustStoreOptions().loadKeyStore(vertx.getDelegate());
             } catch (Exception e) {
-                throw new ConfigurationException("Unable to read TLS key store " + name + " + configured to " + getPath(), e);
+                throw new ConfigurationException("Unable to read TLS key store " + name + " + configured to " + getCertificatePaths(), e);
             }
 
         }
