@@ -1,8 +1,7 @@
-package io.quarkus.tls.runtime;
+package io.quarkus.tls.api;
 
 import java.util.List;
 import java.util.Optional;
-
 
 import io.vertx.core.net.TrustOptions;
 

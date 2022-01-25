@@ -1,8 +1,8 @@
-package io.quarkus.tls.runtime;
-
-import io.vertx.core.net.KeyCertOptions;
+package io.quarkus.tls.api;
 
 import java.util.Optional;
+
+import io.vertx.core.net.KeyCertOptions;
 
 /**
  * Structure storing the TLS Key store.

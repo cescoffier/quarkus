@@ -1,29 +1,30 @@
-package io.quarkus.tls.runtime.impl;
+package io.quarkus.tls.runtime.impl.factories;
 
 import java.util.List;
 import java.util.Optional;
-
-import io.quarkus.runtime.configuration.ConfigurationException;
-import io.quarkus.tls.runtime.TlsTrustStore;
-import io.quarkus.tls.runtime.config.TrustStoreRuntimeConfig;
-import io.quarkus.tls.runtime.spi.TlsTrustStoreFactory;
-import io.vertx.core.net.JksOptions;
-import io.vertx.mutiny.core.Vertx;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
+import io.quarkus.runtime.configuration.ConfigurationException;
+import io.quarkus.tls.api.TlsTrustStore;
+import io.quarkus.tls.runtime.config.TrustStoreRuntimeConfig;
+import io.quarkus.tls.runtime.impl.TlsBucketUtil;
+import io.quarkus.tls.runtime.spi.TlsTrustStoreFactory;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.mutiny.core.Vertx;
+
 @ApplicationScoped
 @Typed(TlsTrustStoreFactory.class)
-public class JksTrustStoreFactory implements TlsTrustStoreFactory {
+public class PfxTrustStoreFactory implements TlsTrustStoreFactory {
 
-    private static final String TYPE = "JKS";
+    private static final String TYPE = "P12";
 
     private final Vertx vertx;
 
     @Inject
-    public JksTrustStoreFactory(Vertx vertx) {
+    public PfxTrustStoreFactory(Vertx vertx) {
         this.vertx = vertx;
     }
 
@@ -34,24 +35,24 @@ public class JksTrustStoreFactory implements TlsTrustStoreFactory {
 
     @Override
     public TlsTrustStore create(String name, TrustStoreRuntimeConfig config) {
-        JksTrustStore store = new JksTrustStore(name, config);
+        PfxTrustStore store = new PfxTrustStore(name, config);
         store.validate();
         return store;
     }
 
-    private class JksTrustStore implements TlsTrustStore {
+    private class PfxTrustStore implements TlsTrustStore {
 
         private final String name;
         private final TrustStoreRuntimeConfig config;
 
-        public JksTrustStore(String name, TrustStoreRuntimeConfig config) {
+        public PfxTrustStore(String name, TrustStoreRuntimeConfig config) {
             this.name = name;
             this.config = config;
         }
 
         @Override
         public String getType() {
-            return JksTrustStoreFactory.this.type();
+            return PfxTrustStoreFactory.this.type();
         }
 
         @Override
@@ -75,26 +76,29 @@ public class JksTrustStoreFactory implements TlsTrustStoreFactory {
         }
 
         @Override
-        public JksOptions getVertxTrustStoreOptions() {
-            return new JksOptions()
-                    .setPath(getCertificatePaths().get(0))
+        public PfxOptions getVertxTrustStoreOptions() {
+            return new PfxOptions()
+                    .setPath(config.certs.get(0))
                     .setPassword(getPassword().orElse(null));
         }
 
         public void validate() {
             if (config.certs.isEmpty()) {
-                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "cert-paths") + " must be set for JKS trust store");
+                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "cert-paths")
+                        + " must be set for P12 trust store");
             }
 
             if (config.certs.size() > 1) {
-                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "cert-paths") + " must contain a single path for JKS trust store");
+                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "cert-paths")
+                        + " must contain a single path for P12 trust store");
             }
 
             try {
                 // Just verify it can be loaded.
                 getVertxTrustStoreOptions().loadKeyStore(vertx.getDelegate());
             } catch (Exception e) {
-                throw new ConfigurationException("Unable to read TLS key store " + name + " + configured to " + getCertificatePaths(), e);
+                throw new ConfigurationException(
+                        "Unable to read TLS key store " + name + " + configured to " + getCertificatePaths(), e);
             }
 
         }

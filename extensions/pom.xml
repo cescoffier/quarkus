@@ -20,7 +20,7 @@
         <module>quartz</module>
         <module>jaxp</module>
         <module>smallrye-stork</module>
-        <module>tls-keystore</module>
+        <module>tls-key-store</module>
 
         <!-- Configuration -->
         <module>config-yaml</module>

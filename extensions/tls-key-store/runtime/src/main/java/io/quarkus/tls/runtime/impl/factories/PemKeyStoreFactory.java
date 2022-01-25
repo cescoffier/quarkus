@@ -1,16 +1,13 @@
-package io.quarkus.tls.runtime.impl;
+package io.quarkus.tls.runtime.impl.factories;
 
-import java.io.File;
-import java.util.List;
 import java.util.Optional;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
-import io.netty.handler.ssl.PemPrivateKey;
 import io.quarkus.runtime.configuration.ConfigurationException;
-import io.quarkus.tls.runtime.TlsKeyStore;
+import io.quarkus.tls.api.TlsKeyStore;
 import io.quarkus.tls.runtime.config.KeyStoreRuntimeConfig;
 import io.quarkus.tls.runtime.spi.TlsKeyStoreFactory;
 import io.vertx.core.net.PemKeyCertOptions;

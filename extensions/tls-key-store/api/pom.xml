@@ -10,9 +10,9 @@
         <version>999-SNAPSHOT</version>
     </parent>
 
-    <artifactId>quarkus-tls-key-store</artifactId>
-    <name>Quarkus - TLS Key Store - Runtime</name>
-    <description>Provide support for the loading TLS key stores and trust stores</description>
+    <artifactId>quarkus-tls-key-store-api</artifactId>
+    <name>Quarkus - TLS Key Store - API</name>
+    <description>API to register TLS key stores and certificates</description>
     <dependencies>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -21,32 +21,6 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-vertx</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-tls-key-store-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.graalvm.nativeimage</groupId>
-            <artifactId>svm</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcutil-jdk15on</artifactId>
-            <version>1.70</version>
         </dependency>
     </dependencies>
 

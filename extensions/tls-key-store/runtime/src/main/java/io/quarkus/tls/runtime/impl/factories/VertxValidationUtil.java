@@ -1,19 +1,14 @@
-package io.quarkus.tls.runtime.impl;
+package io.quarkus.tls.runtime.impl.factories;
 
-import io.quarkus.arc.Arc;
-import io.quarkus.runtime.configuration.ConfigurationException;
-import io.quarkus.tls.runtime.TlsKeyStore;
-import io.quarkus.tls.runtime.config.KeyStoreRuntimeConfig;
-import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.mutiny.core.Vertx;
-
-import javax.enterprise.inject.spi.Producer;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.util.Optional;
 import java.util.function.Supplier;
+
+import io.quarkus.runtime.configuration.ConfigurationException;
+import io.quarkus.tls.api.TlsKeyStore;
 
 public class VertxValidationUtil {
 
@@ -24,11 +19,11 @@ public class VertxValidationUtil {
     static void validateKeyStore(String name, TlsKeyStore obj, Supplier<KeyStore> producer) {
         KeyStore store = producer.get();
 
-        Optional<String> alias  = obj.getAlias();
-        if (alias .isPresent()) {
+        Optional<String> alias = obj.getAlias();
+        if (alias.isPresent()) {
             try {
                 String value = alias.get();
-                if (!store.containsAlias(value)  || !store.isKeyEntry(value)) {
+                if (!store.containsAlias(value) || !store.isKeyEntry(value)) {
                     throw new ConfigurationException("TLS key store " + name + " configured with an unknown alias: " + alias);
                 }
             } catch (KeyStoreException e) {
@@ -37,7 +32,7 @@ public class VertxValidationUtil {
         }
 
         Optional<String> password = obj.getAliasPassword();
-        if (password.isPresent()  && alias.isPresent()) {
+        if (password.isPresent() && alias.isPresent()) {
             try {
                 if (store.getKey(alias.get(), password.get().toCharArray()) == null) {
                     throw new ConfigurationException("Wrong alias / alias-password for key store " + name);

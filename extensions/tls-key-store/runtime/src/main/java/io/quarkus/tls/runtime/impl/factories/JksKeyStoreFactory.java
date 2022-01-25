@@ -1,28 +1,27 @@
-package io.quarkus.tls.runtime.impl;
+package io.quarkus.tls.runtime.impl.factories;
 
-import java.io.File;
 import java.util.Optional;
-
-import io.quarkus.runtime.configuration.ConfigurationException;
-import io.quarkus.tls.runtime.TlsKeyStore;
-import io.quarkus.tls.runtime.config.KeyStoreRuntimeConfig;
-import io.quarkus.tls.runtime.spi.TlsKeyStoreFactory;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.mutiny.core.Vertx;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
+import io.quarkus.runtime.configuration.ConfigurationException;
+import io.quarkus.tls.api.TlsKeyStore;
+import io.quarkus.tls.runtime.config.KeyStoreRuntimeConfig;
+import io.quarkus.tls.runtime.spi.TlsKeyStoreFactory;
+import io.vertx.core.net.JksOptions;
+import io.vertx.mutiny.core.Vertx;
+
 @ApplicationScoped
 @Typed(TlsKeyStoreFactory.class)
-public class PfxKeyStoreFactory implements TlsKeyStoreFactory {
+public class JksKeyStoreFactory implements TlsKeyStoreFactory {
 
-    private static final String TYPE = "P12";
+    private static final String TYPE = "JKS";
     private final Vertx vertx;
 
     @Inject
-    public PfxKeyStoreFactory(Vertx vertx) {
+    public JksKeyStoreFactory(Vertx vertx) {
         this.vertx = vertx;
     }
 
@@ -33,24 +32,24 @@ public class PfxKeyStoreFactory implements TlsKeyStoreFactory {
 
     @Override
     public TlsKeyStore create(String name, KeyStoreRuntimeConfig config) {
-        PfxKeyStore store = new PfxKeyStore(name, config);
+        JksKeyStore store = new JksKeyStore(name, config);
         store.validate();
         return store;
     }
 
-    private class PfxKeyStore implements TlsKeyStore {
+    private class JksKeyStore implements TlsKeyStore {
 
         private final String name;
         private final KeyStoreRuntimeConfig config;
 
-        public PfxKeyStore(String name, KeyStoreRuntimeConfig config) {
+        public JksKeyStore(String name, KeyStoreRuntimeConfig config) {
             this.name = name;
             this.config = config;
         }
 
         @Override
         public String getType() {
-            return PfxKeyStoreFactory.this.type();
+            return JksKeyStoreFactory.this.type();
         }
 
         @Override
@@ -70,6 +69,7 @@ public class PfxKeyStoreFactory implements TlsKeyStoreFactory {
 
         @Override
         public Optional<String> getCert() {
+            // Not supported for JKS, everything is in the same file.
             return Optional.empty();
         }
 
@@ -89,8 +89,8 @@ public class PfxKeyStoreFactory implements TlsKeyStoreFactory {
         }
 
         @Override
-        public PfxOptions getVertxKeyStoreOptions() {
-            return new PfxOptions()
+        public JksOptions getVertxKeyStoreOptions() {
+            return new JksOptions()
                     .setAlias(getAlias().orElse(null))
                     .setAliasPassword(getAliasPassword().orElse(null))
                     .setPath(getKey())
@@ -99,7 +99,7 @@ public class PfxKeyStoreFactory implements TlsKeyStoreFactory {
 
         public void validate() {
             if (config.cert.isPresent()) {
-                throw new ConfigurationException("The P12 key store " + name + " does not support the `cert` attribute as P12 key stores contain both the key and the certificate");
+                throw new ConfigurationException("The JKS key store " + name + " does not support the `cert` attribute as JKS files contain both the key and the certificate");
             }
             VertxValidationUtil.validateKeyStore(name, this, () -> {
                 try {

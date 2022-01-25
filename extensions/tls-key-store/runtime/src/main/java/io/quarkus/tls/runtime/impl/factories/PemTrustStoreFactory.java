@@ -1,6 +1,5 @@
-package io.quarkus.tls.runtime.impl;
+package io.quarkus.tls.runtime.impl.factories;
 
-import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,8 +8,9 @@ import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
 import io.quarkus.runtime.configuration.ConfigurationException;
-import io.quarkus.tls.runtime.TlsTrustStore;
+import io.quarkus.tls.api.TlsTrustStore;
 import io.quarkus.tls.runtime.config.TrustStoreRuntimeConfig;
+import io.quarkus.tls.runtime.impl.TlsBucketUtil;
 import io.quarkus.tls.runtime.spi.TlsTrustStoreFactory;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.mutiny.core.Vertx;
@@ -84,17 +84,21 @@ public class PemTrustStoreFactory implements TlsTrustStoreFactory {
 
         public void validate() {
             if (config.certs.isEmpty()) {
-                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "certs") + " must be set for P12 trust store");
+                throw new ConfigurationException(
+                        "The " + TlsBucketUtil.getAttribute(name, "trust-store", "certs") + " must be set for P12 trust store");
             }
             if (config.certs.size() > 1) {
-                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "certs") + " must contain a single P12 trust store");
+                throw new ConfigurationException("The " + TlsBucketUtil.getAttribute(name, "trust-store", "certs")
+                        + " must contain a single P12 trust store");
             }
 
             try {
                 // Just verify it can be loaded.
                 getVertxTrustStoreOptions().loadKeyStore(vertx.getDelegate());
             } catch (Exception e) {
-                throw new ConfigurationException("Unable to read TLS trust store " + name + " of type P12 and configured with " + getCertificatePaths(), e);
+                throw new ConfigurationException(
+                        "Unable to read TLS trust store " + name + " of type P12 and configured with " + getCertificatePaths(),
+                        e);
             }
 
         }
