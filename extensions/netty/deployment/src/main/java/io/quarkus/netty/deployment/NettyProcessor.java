@@ -13,6 +13,7 @@ import org.jboss.logging.Logger;
 import org.jboss.logmanager.Level;
 
 import io.netty.channel.EventLoopGroup;
+import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
@@ -106,6 +107,13 @@ class NettyProcessor {
                 .addRuntimeInitializedClass("io.netty.buffer.PooledByteBufAllocator")
                 .addRuntimeInitializedClass("io.netty.buffer.ByteBufAllocator")
                 .addRuntimeInitializedClass("io.netty.buffer.ByteBufUtil")
+
+                .addRuntimeInitializedClass("io.netty.handler.codec.compression.BrotliOptions")
+                .addRuntimeInitializedClass("io.netty.handler.codec.compression.BrotliEncoder")
+                .addRuntimeReinitializedClass("io.netty.handler.codec.compression.StandardCompressionOptions")
+                .addRuntimeInitializedClass("io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder")
+                .addRuntimeInitializedClass(HttpContentCompressor.class.getName())
+
                 .addNativeImageSystemProperty("io.netty.leakDetection.level", "DISABLED");
 
         if (QuarkusClassLoader.isClassPresentAtRuntime("io.netty.handler.codec.http.HttpObjectEncoder")) {
@@ -113,6 +121,7 @@ class NettyProcessor {
                     .addRuntimeInitializedClass("io.netty.handler.codec.http.HttpObjectEncoder")
                     .addRuntimeInitializedClass("io.netty.handler.codec.http.websocketx.extensions.compression.DeflateDecoder")
                     .addRuntimeInitializedClass("io.netty.handler.codec.http.websocketx.WebSocket00FrameEncoder");
+
         } else {
             log.debug("Not registering Netty HTTP classes as they were not found");
         }

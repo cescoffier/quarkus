@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BooleanSupplier;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
@@ -220,6 +221,33 @@ final class Target_io_vertx_core_net_impl_DefaultJDKCipherSuite {
     @Alias
     static List<String> get() {
         return null;
+    }
+}
+
+@TargetClass(className = "io.vertx.core.http.impl.Http1xClientConnection", onlyWith = BrotliMissingSelector.class)
+final class Target_io_vertx_core_http_impl_Http1xClientConnection {
+    @Substitute
+    private static boolean isBrotliAvailable() {
+        return false;
+    }
+}
+
+final class BrotliMissingSelector implements BooleanSupplier {
+
+    private boolean brotliAbsent;
+
+    public BrotliMissingSelector() {
+        try {
+            Class.forName("com.aayushatharva.brotli4j.encoder.Encoder");
+            brotliAbsent = false;
+        } catch (ClassNotFoundException e) {
+            brotliAbsent = true;
+        }
+    }
+
+    @Override
+    public boolean getAsBoolean() {
+        return brotliAbsent;
     }
 }
 

@@ -403,8 +403,8 @@ final class Holder_io_netty_util_concurrent_ScheduledFutureTask {
     static final long START_TIME = System.nanoTime();
 }
 
-@TargetClass(className = "io.netty.util.concurrent.ScheduledFutureTask")
-final class Target_io_netty_util_concurrent_ScheduledFutureTask {
+@TargetClass(className = "io.netty.util.concurrent.AbstractScheduledEventExecutor")
+final class Target_io_netty_util_concurrent_AbstractScheduledEventExecutor {
 
     // The START_TIME field is kept but not used.
     // All the accesses to it have been replaced with Holder_io_netty_util_concurrent_ScheduledFutureTask
@@ -415,20 +415,10 @@ final class Target_io_netty_util_concurrent_ScheduledFutureTask {
     }
 
     @Substitute
-    static long nanoTime() {
+    static long defaultCurrentTimeNanos() {
         return System.nanoTime() - Holder_io_netty_util_concurrent_ScheduledFutureTask.START_TIME;
     }
 
-    @Alias
-    public long deadlineNanos() {
-        return 0;
-    }
-
-    @Substitute
-    public long delayNanos(long currentTimeNanos) {
-        return Math.max(0,
-                deadlineNanos() - (currentTimeNanos - Holder_io_netty_util_concurrent_ScheduledFutureTask.START_TIME));
-    }
 }
 
 @TargetClass(className = "io.netty.channel.ChannelHandlerMask")
