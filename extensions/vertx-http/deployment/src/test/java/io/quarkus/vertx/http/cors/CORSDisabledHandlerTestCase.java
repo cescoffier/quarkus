@@ -20,10 +20,10 @@ public class CORSDisabledHandlerTestCase {
     @DisplayName("Doesn't return CORS headers if not configured")
     public void corsPreflightTest() {
         String origin = "http://custom.origin.quarkus";
-        String methods = "GET,POST";
+        String method = "POST";
         String headers = "X-Custom";
         given().header("Origin", origin)
-                .header("Access-Control-Request-Method", methods)
+                .header("Access-Control-Request-Method", method)
                 .header("Access-Control-Request-Headers", headers)
                 .when()
                 .options("/test").then()

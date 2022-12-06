@@ -14,12 +14,12 @@ public class CORSConfig {
 
     /**
      * Origins allowed for CORS
-     *
-     * Comma separated list of valid URLs, e.g.: http://www.quarkus.io,http://localhost:3000
+     * <p>
+     * Comma separated list of valid URLs, e.g.: {@code http://www.quarkus.io,http://localhost:3000}
      * In case an entry of the list is surrounded by forward slashes,
      * it is interpreted as a regular expression.
      * The filter allows any origin if this is not set.
-     *
+     * <p>
      * default: returns any requested origin as valid
      */
     @ConfigItem
@@ -28,10 +28,10 @@ public class CORSConfig {
 
     /**
      * HTTP methods allowed for CORS
-     *
+     * <p>
      * Comma separated list of valid methods. ex: GET,PUT,POST
      * The filter allows any method if this is not set.
-     *
+     * <p>
      * default: returns any requested method as valid
      */
     @ConfigItem
@@ -40,10 +40,10 @@ public class CORSConfig {
 
     /**
      * HTTP headers allowed for CORS
-     *
+     * <p>
      * Comma separated list of valid headers. ex: X-Custom,Content-Disposition
      * The filter allows any header if this is not set.
-     *
+     * <p>
      * default: returns any requested header as valid
      */
     @ConfigItem
@@ -52,9 +52,9 @@ public class CORSConfig {
 
     /**
      * HTTP headers exposed in CORS
-     *
+     * <p>
      * Comma separated list of valid headers. ex: X-Custom,Content-Disposition
-     *
+     * <p>
      * default: empty
      */
     @ConfigItem
@@ -72,7 +72,7 @@ public class CORSConfig {
      * The `Access-Control-Allow-Credentials` header is used to tell the
      * browsers to expose the response to front-end JavaScript code when
      * the request’s credentials mode Request.credentials is “include”.
-     *
+     * <p>
      * The value of this header will default to `true` if `quarkus.http.cors.origins` property is set and
      * there is a match with the precise `Origin` header and that header is not '*'.
      */
