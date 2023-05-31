@@ -878,11 +878,7 @@ public class VertxHttpRecorder {
             serverOptions.addEnabledCipherSuite(cipher);
         }
 
-        for (String protocol : sslConfig.protocols) {
-            if (!protocol.isEmpty()) {
-                serverOptions.addEnabledSecureTransportProtocol(protocol);
-            }
-        }
+        serverOptions.setEnabledSecureTransportProtocols(sslConfig.protocols);
         serverOptions.setSsl(true);
         serverOptions.setSni(sslConfig.sni);
         int sslPort = httpConfiguration.determineSslPort(launchMode);
