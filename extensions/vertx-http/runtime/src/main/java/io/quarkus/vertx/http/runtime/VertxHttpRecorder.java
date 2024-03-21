@@ -1,6 +1,9 @@
 package io.quarkus.vertx.http.runtime;
 
 import static io.quarkus.vertx.core.runtime.context.VertxContextSafetyToggle.setContextSafe;
+import static io.quarkus.vertx.http.runtime.options.HttpServerOptionsUtils.RANDOM_PORT_MAIN_HTTP;
+import static io.quarkus.vertx.http.runtime.options.HttpServerOptionsUtils.RANDOM_PORT_MAIN_TLS;
+import static io.quarkus.vertx.http.runtime.options.HttpServerOptionsUtils.RANDOM_PORT_MANAGEMENT_HTTP;
 import static io.quarkus.vertx.http.runtime.options.HttpServerOptionsUtils.getInsecureRequestStrategy;
 
 import java.io.File;
@@ -702,8 +705,7 @@ public class VertxHttpRecorder {
         httpMainDomainSocketOptions = createDomainSocketOptions(httpBuildTimeConfig, httpConfiguration,
                 websocketSubProtocols);
         HttpServerOptions tmpSslConfig = HttpServerOptionsUtils.createSslOptions(httpBuildTimeConfig, httpConfiguration,
-                launchMode,
-                websocketSubProtocols);
+                launchMode, websocketSubProtocols, RANDOM_PORT_MAIN_TLS);
 
         // Customize
         if (Arc.container() != null) {
@@ -936,7 +938,7 @@ public class VertxHttpRecorder {
         // TODO other config properties
         HttpServerOptions options = new HttpServerOptions();
         int port = httpConfiguration.determinePort(launchMode);
-        options.setPort(port == 0 ? -1 : port);
+        options.setPort(port == 0 ? RANDOM_PORT_MAIN_HTTP : port);
 
         HttpServerOptionsUtils.applyCommonOptions(options, buildTimeConfig, httpConfiguration, websocketSubProtocols);
 
@@ -951,7 +953,7 @@ public class VertxHttpRecorder {
         }
         HttpServerOptions options = new HttpServerOptions();
         int port = httpConfiguration.determinePort(launchMode);
-        options.setPort(port == 0 ? -1 : port);
+        options.setPort(port == 0 ? RANDOM_PORT_MANAGEMENT_HTTP : port);
 
         HttpServerOptionsUtils.applyCommonOptionsForManagementInterface(options, buildTimeConfig, httpConfiguration,
                 websocketSubProtocols);

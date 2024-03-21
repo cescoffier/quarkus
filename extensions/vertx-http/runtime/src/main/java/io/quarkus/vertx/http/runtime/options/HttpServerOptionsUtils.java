@@ -31,11 +31,16 @@ import io.vertx.core.net.*;
 @SuppressWarnings("OptionalIsPresent")
 public class HttpServerOptionsUtils {
 
+    public static final int RANDOM_PORT_MAIN_HTTP = -1;
+    public static final int RANDOM_PORT_MAIN_TLS = -2;
+    public static final int RANDOM_PORT_MANAGEMENT_HTTP = -3;
+    public static final int RANDOM_PORT_MANAGEMENT_TLS = -4;
+
     /**
      * Get an {@code HttpServerOptions} for this server configuration, or null if SSL should not be enabled
      */
     public static HttpServerOptions createSslOptions(HttpBuildTimeConfig buildTimeConfig, HttpConfiguration httpConfiguration,
-            LaunchMode launchMode, List<String> websocketSubProtocols)
+            LaunchMode launchMode, List<String> websocketSubProtocols, int randomPortPlaceholder)
             throws IOException {
         if (!httpConfiguration.hostEnabled) {
             return null;
@@ -108,7 +113,7 @@ public class HttpServerOptionsUtils {
         serverOptions.setSni(sslConfig.sni);
         int sslPort = httpConfiguration.determineSslPort(launchMode);
         // -2 instead of -1 (see http) to have vert.x assign two different random ports if both http and https shall be random
-        serverOptions.setPort(sslPort == 0 ? -2 : sslPort);
+        serverOptions.setPort(sslPort == 0 ? randomPortPlaceholder : sslPort);
         serverOptions.setClientAuth(buildTimeConfig.tlsClientAuth);
 
         applyCommonOptions(serverOptions, buildTimeConfig, httpConfiguration, websocketSubProtocols);
@@ -195,7 +200,7 @@ public class HttpServerOptionsUtils {
         serverOptions.setSni(sslConfig.sni);
         int sslPort = httpConfiguration.determinePort(launchMode);
         // -2 instead of -1 (see http) to have vert.x assign two different random ports if both http and https shall be random
-        serverOptions.setPort(sslPort == 0 ? -2 : sslPort);
+        serverOptions.setPort(sslPort == 0 ? RANDOM_PORT_MANAGEMENT_TLS : sslPort);
         serverOptions.setClientAuth(buildTimeConfig.tlsClientAuth);
 
         applyCommonOptionsForManagementInterface(serverOptions, buildTimeConfig, httpConfiguration, websocketSubProtocols);
