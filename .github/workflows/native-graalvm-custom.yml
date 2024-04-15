@@ -171,8 +171,6 @@ jobs:
   calculate-test-jobs:
     name: Calculate Test Jobs
     runs-on: ubuntu-latest
-    # Skip main in forks
-    if: "github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main')"
     needs: build-jdk17
     env:
       GIB_IMPACTED_MODULES: ${{ needs.build-jdk17.outputs.gib_impacted }}
@@ -292,9 +290,6 @@ jobs:
           category=$(echo -n '${{matrix.category}}' | tr '[:upper:]' '[:lower:]' | tr -c '[:alnum:]-' '-' | sed -E 's/-+/-/g')
           echo "GE_TAGS=native-${category}" >> "$GITHUB_ENV"
           echo "GE_CUSTOM_VALUES=gh-job-name=Native Tests - ${{matrix.category}}" >> "$GITHUB_ENV"
-      - name: Support longpaths on Windows
-        if: "startsWith(matrix.os-name, 'windows')"
-        run: git config --global core.longpaths true
       - uses: actions/checkout@v4
       - name: Reclaim Disk Space
         run: .github/ci-prerequisites.sh
