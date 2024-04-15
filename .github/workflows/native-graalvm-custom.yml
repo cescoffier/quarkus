@@ -61,7 +61,7 @@ jobs:
           echo "GE_CUSTOM_VALUES=gh-job-name=Initial JDK 17 Build" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
         with:
-          ref: $BRANCH
+          ref: ${{ inputs.BRANCH }}
           # this is important for GIB to work
           fetch-depth: 0
       - name: Add quarkusio remote
@@ -234,8 +234,8 @@ jobs:
         id: setup-graalvm
         uses: graalvm/setup-graalvm@v1
         with:
-          java-version: ${NATIVE_COMPILER_VERSION}
-          distribution: ${NATIVE_COMPILER}
+          java-version: ${{ inputs.NATIVE_COMPILER_VERSION }}
+          distribution: ${{ inputs.NATIVE_COMPILER }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
       # We do this so we can get better analytics for the downloaded version of the build images
       - name: Update Docker Client User Agent
@@ -307,8 +307,8 @@ jobs:
         id: setup-graalvm
         uses: graalvm/setup-graalvm@v1
         with:
-          java-version: ${NATIVE_COMPILER_VERSION}
-          distribution: ${NATIVE_COMPILER}
+          java-version: ${{ inputs.NATIVE_COMPILER_VERSION }}
+          distribution: ${{ inputs.NATIVE_COMPILER }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
       # We do this so we can get better analytics for the downloaded version of the build images
       - name: Update Docker Client User Agent
