@@ -186,6 +186,7 @@ jobs:
           json=$(.github/filter-native-tests-json.sh "${GIB_IMPACTED_MODULES}" | tr -d '\n')
           # Remove Windows from the matrix
           json=$(echo $json | jq 'del(.include[] | select(."os-name" == "windows-latest"))')
+          json=$(echo $json | tr -d '\n')
           echo "${json}"
           echo "matrix=${json}" >> $GITHUB_OUTPUT
       - name: Calculate matrix from virtual-threads-tests.json
@@ -195,6 +196,7 @@ jobs:
           json=$(.github/filter-virtual-threads-tests-json.sh "${GIB_IMPACTED_MODULES}" | tr -d '\n')
           # Remove Windows from the matrix
           json=$(echo $json | jq 'del(.include[] | select(."os-name" == "windows-latest"))')
+          json=$(echo $json | tr -d '\n')
           echo "${json}"
           echo "matrix=${json}" >> $GITHUB_OUTPUT      
 
