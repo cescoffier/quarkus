@@ -275,7 +275,6 @@ jobs:
     name: Native Tests - ${{matrix.category}} - ${{inputs.NATIVE_COMPILER}} ${{inputs.NATIVE_COMPILER_VERSION}} - ${{inputs.BRANCH}}
     needs: [build-jdk17, calculate-test-jobs]
     runs-on: ${{matrix.os-name}}
-    if: ${{ matrix.os-name == 'ubuntu-latest' }}
     env:
       # leave more space for the actual native compilation and execution
       MAVEN_OPTS: -Xmx1g
@@ -338,6 +337,7 @@ jobs:
           path: '**/.quarkus/quarkus-prod-config-dump'
           key: ${{ runner.os }}-quarkus-metadata
       - name: Build
+        if: ${{matrix.os-name == 'ubuntu-latest'}}
         env:
           TEST_MODULES: ${{matrix.test-modules}}
           CAPTURE_BUILD_SCAN: true
