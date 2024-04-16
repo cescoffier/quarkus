@@ -1,4 +1,4 @@
-name: Quarkus CI - Custom Native
+name: Quarkus CI - Native IT on selected GraalVM
 
 on:
   workflow_dispatch:
@@ -184,6 +184,8 @@ jobs:
         run: |
           echo "GIB_IMPACTED_MODULES: ${GIB_IMPACTED_MODULES}"
           json=$(.github/filter-native-tests-json.sh "${GIB_IMPACTED_MODULES}" | tr -d '\n')
+          # Remove Windows from the matrix
+          json=$(echo $json | jq 'del(.include[] | select(."os-name" == "windows-latest"))')
           echo "${json}"
           echo "matrix=${json}" >> $GITHUB_OUTPUT
       - name: Calculate matrix from virtual-threads-tests.json
@@ -191,6 +193,8 @@ jobs:
         run: |
           echo "GIB_IMPACTED_MODULES: ${GIB_IMPACTED_MODULES}"
           json=$(.github/filter-virtual-threads-tests-json.sh "${GIB_IMPACTED_MODULES}" | tr -d '\n')
+          # Remove Windows from the matrix
+          json=$(echo $json | jq 'del(.include[] | select(."os-name" == "windows-latest"))')
           echo "${json}"
           echo "matrix=${json}" >> $GITHUB_OUTPUT      
 
@@ -337,7 +341,6 @@ jobs:
           path: '**/.quarkus/quarkus-prod-config-dump'
           key: ${{ runner.os }}-quarkus-metadata
       - name: Build
-        if: ${{matrix.os-name == 'ubuntu-latest'}}
         env:
           TEST_MODULES: ${{matrix.test-modules}}
           CAPTURE_BUILD_SCAN: true
