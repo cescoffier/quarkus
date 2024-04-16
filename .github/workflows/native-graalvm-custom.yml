@@ -48,7 +48,7 @@ defaults:
 
 jobs:
   build-jdk17:
-    name: "Initial JDK 17 Build"
+    name: "Initial JDK 17 Build - ${{ inputs.BRANCH }}"
     runs-on: ubuntu-latest
     outputs:
       gib_args: ${{ steps.get-gib-args.outputs.gib_args }}
@@ -195,7 +195,7 @@ jobs:
           echo "matrix=${json}" >> $GITHUB_OUTPUT      
 
   virtual-thread-native-tests:
-    name: Native Tests - Virtual Thread - ${{matrix.category}}
+    name: Native Tests - Virtual Thread - ${{matrix.category}} - ${{inputs.NATIVE_COMPILER}} ${{inputs.NATIVE_COMPILER_VERSION}} - ${{inputs.BRANCH}}
     runs-on: ${{matrix.os-name}}
     needs: [build-jdk17, calculate-test-jobs]
     timeout-minutes: ${{matrix.timeout}}
@@ -272,9 +272,10 @@ jobs:
           retention-days: 7
 
   native-tests:
-    name: Native Tests - ${{matrix.category}}
+    name: Native Tests - ${{matrix.category}} - ${{inputs.NATIVE_COMPILER}} ${{inputs.NATIVE_COMPILER_VERSION}} - ${{inputs.BRANCH}}
     needs: [build-jdk17, calculate-test-jobs]
     runs-on: ${{matrix.os-name}}
+    if: ${{ matrix.os-name == 'ubuntu-latest' }}
     env:
       # leave more space for the actual native compilation and execution
       MAVEN_OPTS: -Xmx1g
@@ -371,7 +372,7 @@ jobs:
 
   build-report:
     runs-on: ubuntu-latest
-    name: Build report
+    name: Build report - ${{inputs.NATIVE_COMPILER}} ${{inputs.NATIVE_COMPILER_VERSION}} - ${{inputs.BRANCH}}
     needs: [build-jdk17,native-tests,virtual-thread-native-tests]
     if: always()
     steps:
