@@ -29,9 +29,9 @@ public class S2iConfig {
     /**
      * The base image to be used when a container image is being produced for the jar build.
      *
-     * When the application is built against Java 21 or higher, {@code registry.access.redhat.com/ubi8/openjdk-21:1.20}
+     * When the application is built against Java 21 or higher, {@code registry.access.redhat.com/ubi9/openjdk-21:1.21}
      * is used as the default.
-     * Otherwise {@code registry.access.redhat.com/ubi8/openjdk-17:1.20} is used as the default.
+     * Otherwise {@code registry.access.redhat.com/ubi9/openjdk-17:1.21} is used as the default.
      */
     @ConfigItem
     public Optional<String> baseJvmImage;
