@@ -95,7 +95,7 @@ public class JibProcessor {
     private static final String BINARY_NAME_IN_CONTAINER = "application";
 
     // The source for this can be found at https://github.com/jboss-container-images/openjdk/blob/ubi9/modules/run/artifacts/opt/jboss/container/java/run/run-java.sh
-    // A list of env vars that affect this script can be found at https://rh-openjdk.github.io/redhat-openjdk-containers//ubi9/ubi9-openjdk-17.html
+    // A list of env vars that affect this script can be found at https://rh-openjdk.github.io/redhat-openjdk-containers/ubi9/ubi9-openjdk-17.html
     private static final String RUN_JAVA_PATH = "/opt/jboss/container/java/run/run-java.sh";
 
     private static final String DEFAULT_BASE_IMAGE_USER = "185";
